@@ -92,6 +92,21 @@ module Gcloud
       end
 
       ##
+      def cors
+        g = @gapi
+        g = g.to_hash if g.respond_to? :to_hash
+        c = g["cors"] ||= [] # consider freezing the array so no updates?
+        # return c unless block_given?
+        # cors = Cors.new c
+        # yield cors
+        # self.cors = cors.cors if cors.changed?
+      end
+
+      def cors= new_cors
+        patch_gapi! cors: new_cors
+      end
+
+      ##
       # Permenently deletes the bucket.
       # The bucket must be empty before it can be deleted.
       #

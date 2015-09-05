@@ -338,6 +338,41 @@ describe Gcloud::Storage::Bucket, :mock_storage do
     bucket.url.must_equal "#{new_url_root}/b/#{bucket_name}"
   end
 
+  it "gets the cors rules" do
+    bucket.cors.must_equal []
+  end
+
+  it "sets the cors rules" do
+    mock_connection.patch "/storage/v1/b/#{bucket.name}" do |env|
+      json = JSON.parse env.body
+      access = json["cors"]
+      cors.wont_be :nil?
+      cors.must_be_kind_of Array
+      cors.wont_be :empty?
+      cors.count.must_equal 1
+      rule = cors.first
+      rule.wont_be :nil?
+      rule.must_be_kind_of Hash
+      rule["maxAgeSeconds"].must_equal 300
+      rule["origin"].must_equal [ "http://example.org", "https://example.org" ]
+      rule["method"].must_equal [ "*" ]
+      rule["responseHeader"].must_equal [ "Content-Type" ]
+
+      updated_gapi = bucket.gapi.dup
+      updated_gapi["cors"] = json["cors"]
+      [200, {"Content-Type"=>"application/json"},
+       ret_dataset.to_json]
+    end
+
+    new_cors_rules = [ { "maxAgeSeconds" => 300,
+                         "origin" => [ "http://example.org",
+                                       "https://example.org" ],
+                         "method" => [ "*" ],
+                         "responseHeader" => [ "Content-Type" ] } ]
+
+    bucket.cors = new_cors_rules
+  end
+
   def create_file_json bucket=nil, name = nil
     random_file_hash(bucket, name).to_json
   end
