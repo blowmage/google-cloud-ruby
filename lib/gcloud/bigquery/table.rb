@@ -328,14 +328,13 @@ module Gcloud
       #
       def schema replace: false
         ensure_full_data!
-        g = @gapi
-        g = g.to_hash if g.respond_to? :to_hash
-        s = g["schema"] ||= {}
-        return s unless block_given?
-        s = nil if replace
-        schema_builder = Schema.new s
-        yield schema_builder
-        self.schema = schema_builder.schema if schema_builder.changed?
+        ensure_full_data!
+        schema_builder = Schema::Updater.new @gapi
+        if block_given?
+          yield schema_builder
+          patch_gapi! :schema if schema_builder.changed?
+        end
+        schema_builder.freeze
       end
 
       ##
@@ -996,6 +995,56 @@ module Gcloud
           table.table_ref
         else
           Connection.table_ref_from_s table, table_ref
+        end
+      end
+
+      ##
+      # Yielded to a block to accumulate changes for a patch request.
+      class Updater < Table
+        ##
+        # A list of attributes that were updated.
+        attr_reader :updates
+
+        ##
+        # Create an Updater object.
+        def initialize gapi
+          @updates = []
+          @gapi = gapi
+        end
+
+        def schema
+          # Same as Dataset#access, but not frozen
+          @original_access_hashes = Array(@gapi.access).map(&:to_h)
+          # TODO: make sure to call ensure_full_data! on Dataset#update
+          access_builder = Access.new @gapi
+          if block_given?
+            yield access_builder
+            patch_gapi! :access if access_builder.changed?
+          end
+          access_builder
+        end
+
+        ##
+        # Make sure any access changes are saved
+        def check_for_mutated_access!
+          return if @original_access_hashes.nil?
+          if @original_access_hashes != @gapi.access.map(&:to_h)
+            patch_gapi! :access
+          end
+        end
+
+        def to_gapi
+          check_for_mutable_cors!
+          @gapi
+        end
+
+        protected
+
+        ##
+        # Queue up all the updates instead of making them.
+        def patch_gapi! attribute
+          @updates << attribute
+          @updates.uniq!
         end
       end
     end

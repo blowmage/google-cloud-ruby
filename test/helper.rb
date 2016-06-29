@@ -187,40 +187,6 @@ class MockPubsub < Minitest::Spec
     }.to_json
   end
 
-  def already_exists_error_json resource_name
-    {
-      "error" => {
-        "code" => 409,
-        "message" => "Resource already exists in the project (resource=#{resource_name}).",
-        "errors" => [
-          {
-            "message" => "Resource already exists in the project (resource=#{resource_name}).",
-            "domain" => "global",
-            "reason" => "alreadyExists"
-          }
-        ],
-        "status" => "ALREADY_EXISTS"
-      }
-    }.to_json
-  end
-
-  def not_found_error_json resource_name
-    {
-      "error" => {
-        "code" => 404,
-        "message" => "Resource not found (resource=#{resource_name}).",
-        "errors" => [
-          {
-            "message" => "Resource not found (resource=#{resource_name}).",
-            "domain" => "global",
-            "reason" => "notFound"
-          }
-        ],
-        "status" => "NOT_FOUND"
-      }
-    }.to_json
-  end
-
   def project_path
     "projects/#{project}"
   end
@@ -240,26 +206,13 @@ class MockPubsub < Minitest::Spec
 end
 
 class MockBigquery < Minitest::Spec
-  let(:project) { bigquery.connection.project }
-  let(:credentials) { bigquery.connection.credentials }
+  let(:project) { bigquery.service.project }
+  let(:credentials) { bigquery.service.credentials }
   let(:bigquery) { $gcloud_bigquery_global ||= Gcloud::Bigquery::Project.new("test-project", OpenStruct.new) }
 
-  def setup
-    @connection = Faraday::Adapter::Test::Stubs.new
-    connection = bigquery.instance_variable_get "@connection"
-    client = connection.instance_variable_get "@client"
-    client.connection = Faraday.new do |builder|
-      # builder.options.params_encoder = Faraday::FlatParamsEncoder
-      builder.adapter :test, @connection
-    end
-  end
-
-  def teardown
-    @connection.verify_stubbed_calls
-  end
-
-  def mock_connection
-    @connection
+  # Register this spec type for when :mock_bigquery is used.
+  register_spec_type(self) do |desc, *addl|
+    addl.include? :mock_bigquery
   end
 
   def random_dataset_hash id = nil, name = nil, description = nil, default_expiration = nil, location = "US"
@@ -300,22 +253,6 @@ class MockBigquery < Minitest::Spec
       },
       "friendlyName" => name
     }
-  end
-
-  def invalid_dataset_id_error_json id
-    {
-      "error" => {
-        "code" => 400,
-        "message" => "Invalid dataset ID \"#{id}\". Dataset IDs must be alphanumeric (plus underscores, dashes, and colons) and must be at most 1024 characters long.",
-        "errors" => [
-          {
-            "message" => "Invalid dataset ID \"#{id}\". Dataset IDs must be alphanumeric (plus underscores, dashes, and colons) and must be at most 1024 characters long.",
-            "domain" => "global",
-            "reason" => "invalid"
-          }
-        ]
-      }
-    }.to_json
   end
 
   def random_table_hash dataset, id = nil, name = nil, description = nil, project_id = nil
@@ -466,9 +403,7 @@ class MockBigquery < Minitest::Spec
         "dryRun" => false
       },
       "status" => {
-        "state" => state,
-        "errorResult" => nil,
-        "errors" => nil
+        "state" => state
       },
       "statistics" => {
         "creationTime" => (Time.now.to_f * 1000).floor,
@@ -477,10 +412,6 @@ class MockBigquery < Minitest::Spec
       },
       "user_email" => "user@example.com"
     }
-  end
-
-  def query_data_json
-    query_data_hash.to_json
   end
 
   def query_data_hash
@@ -571,11 +502,6 @@ class MockBigquery < Minitest::Spec
       "jobComplete" => true,
       "cacheHit" => false
     }
-  end
-
-  # Register this spec type for when :bigquery is used.
-  register_spec_type(self) do |desc, *addl|
-    addl.include? :mock_bigquery
   end
 end
 

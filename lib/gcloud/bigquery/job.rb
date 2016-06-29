@@ -72,13 +72,13 @@ module Gcloud
       ##
       # The ID of the job.
       def job_id
-        @gapi["jobReference"]["jobId"]
+        @gapi.job_reference.job_id
       end
 
       ##
       # The ID of the project containing the job.
       def project_id
-        @gapi["jobReference"]["projectId"]
+        @gapi.job_reference.project_id
       end
 
       ##
@@ -87,8 +87,8 @@ module Gcloud
       # completed successfully. Use {#failed?} to discover if an error occurred
       # or if the job was successful.
       def state
-        return nil if @gapi["status"].nil?
-        @gapi["status"]["state"]
+        return nil if @gapi.status.nil?
+        @gapi.status.state
       end
 
       ##
@@ -124,9 +124,9 @@ module Gcloud
       ##
       # The time when the job was created.
       def created_at
-        return nil if @gapi["statistics"].nil?
-        return nil if @gapi["statistics"]["creationTime"].nil?
-        Time.at(@gapi["statistics"]["creationTime"] / 1000.0)
+        return nil if @gapi.statistics.nil?
+        return nil if @gapi.statistics.creation_time.nil?
+        Time.at(@gapi.statistics.creation_time / 1000.0)
       end
 
       ##
@@ -134,18 +134,18 @@ module Gcloud
       # This field is present after the job's state changes from `PENDING`
       # to either `RUNNING` or `DONE`.
       def started_at
-        return nil if @gapi["statistics"].nil?
-        return nil if @gapi["statistics"]["startTime"].nil?
-        Time.at(@gapi["statistics"]["startTime"] / 1000.0)
+        return nil if @gapi.statistics.nil?
+        return nil if @gapi.statistics.start_time.nil?
+        Time.at(@gapi.statistics.start_time / 1000.0)
       end
 
       ##
       # The time when the job ended.
       # This field is present when the job's state is `DONE`.
       def ended_at
-        return nil if @gapi["statistics"].nil?
-        return nil if @gapi["statistics"]["endTime"].nil?
-        Time.at(@gapi["statistics"]["endTime"] / 1000.0)
+        return nil if @gapi.statistics.nil?
+        return nil if @gapi.statistics.end_time.nil?
+        Time.at(@gapi.statistics.end_time / 1000.0)
       end
 
       ##
@@ -154,9 +154,7 @@ module Gcloud
       # @see https://cloud.google.com/bigquery/docs/reference/v2/jobs Jobs API
       #   reference
       def configuration
-        hash = @gapi["configuration"] || {}
-        hash = hash.to_hash if hash.respond_to? :to_hash
-        hash
+        @gapi.configuration.to_h
       end
       alias_method :config, :configuration
 
@@ -166,9 +164,7 @@ module Gcloud
       # @see https://cloud.google.com/bigquery/docs/reference/v2/jobs Jobs API
       #   reference
       def statistics
-        hash = @gapi["statistics"] || {}
-        hash = hash.to_hash if hash.respond_to? :to_hash
-        hash
+        @gapi.statistics.to_h
       end
       alias_method :stats, :statistics
 
@@ -176,9 +172,7 @@ module Gcloud
       # The job's status. Returns a hash. The values contained in the hash are
       # also exposed by {#state}, {#error}, and {#errors}.
       def status
-        hash = @gapi["status"] || {}
-        hash = hash.to_hash if hash.respond_to? :to_hash
-        hash
+        @gapi.status.to_h
       end
 
       ##
@@ -196,14 +190,14 @@ module Gcloud
       #   }
       #
       def error
-        status["errorResult"]
+        status[:error_result]
       end
 
       ##
       # The errors for the job, if any errors have occurred. Returns an array
       # of hash objects. See {#error}.
       def errors
-        Array status["errors"]
+        Array status[:errors]
       end
 
       ##
@@ -278,13 +272,13 @@ module Gcloud
       ##
       # Get the subclass for a job type
       def self.klass_for gapi
-        if gapi["configuration"]["copy"]
+        if gapi.configuration.copy
           return CopyJob
-        elsif gapi["configuration"]["extract"]
+        elsif gapi.configuration.extract
           return ExtractJob
-        elsif gapi["configuration"]["load"]
+        elsif gapi.configuration.load
           return LoadJob
-        elsif gapi["configuration"]["query"]
+        elsif gapi.configuration.query
           return QueryJob
         end
         Job
