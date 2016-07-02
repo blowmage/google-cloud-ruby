@@ -115,11 +115,7 @@ module Gcloud
       end
 
       def get_project_table project_id, dataset_id, table_id
-        execute(
-          api_method: @bigquery.tables.get,
-          parameters: { projectId: project_id, datasetId: dataset_id,
-                        tableId: table_id }
-        )
+        service.get_table project_id, dataset_id, table_id
       end
 
       ##
@@ -203,67 +199,41 @@ module Gcloud
       end
 
       def insert_job config
-        execute(
-          api_method: @bigquery.jobs.insert,
-          parameters: { projectId: @project },
-          body_object: { "configuration" => config }
+        job_object = API::Job.new(
+          configuration: config
         )
+        service.insert_job @project, job_object
       end
 
       def query_job query, options = {}
-        execute(
-          api_method: @bigquery.jobs.insert,
-          parameters: { projectId: @project },
-          body_object: query_table_config(query, options)
-        )
+        service.insert_job @project, query_table_config(query, options)
       end
 
       def query query, options = {}
-        execute(
-          api_method: @bigquery.jobs.query,
-          parameters: { projectId: @project },
-          body_object: query_config(query, options)
-        )
+        service.query_job @project, query_config(query, options)
       end
 
       ##
       # Returns the query data for the job
       def job_query_results job_id, options = {}
-        params = { projectId: @project, jobId: job_id,
-                   pageToken: options.delete(:token),
-                   maxResults: options.delete(:max),
-                   startIndex: options.delete(:start),
-                   timeoutMs: options.delete(:timeout)
-                 }.delete_if { |_, v| v.nil? }
-
-        execute(
-          api_method: @bigquery.jobs.get_query_results,
-          parameters: params
-        )
+        service.get_job_query_results @project,
+                                      job_id,
+                                      max_results: options.delete(:max),
+                                      page_token: options.delete(:token),
+                                      start_index: options.delete(:start),
+                                      timeout_ms: options.delete(:timeout)
       end
 
       def copy_table source, target, options = {}
-        execute(
-          api_method: @bigquery.jobs.insert,
-          parameters: { projectId: @project },
-          body_object: copy_table_config(source, target, options)
-        )
+        service.insert_job @project, copy_table_config(source, target, options)
       end
 
       def link_table table, urls, options = {}
-        execute(
-          api_method: @bigquery.jobs.insert,
-          parameters: { projectId: @project },
-          body_object: link_table_config(table, urls, options)
-        )
+        service.insert_job @project, link_table_config(table, urls, options)
       end
 
       def extract_table table, storage_files, options = {}
-        execute(
-          api_method: @bigquery.jobs.insert,
-          parameters: { projectId: @project },
-          body_object: extract_table_config(table, storage_files, options)
-        )
+        service.insert_job @project, extract_table_config(table, storage_files, options)
       end
 
       def load_table table, storage_url, options = {}
@@ -378,191 +348,194 @@ module Gcloud
         }.delete_if { |_, v| v.nil? }
       end
 
-      # # rubocop:disable all
-      # # Disabled rubocop because the API is verbose and so these methods
-      # # are going to be verbose.
-      #
-      # ##
-      # # Job description for query job
-      # def query_table_config query, options
-      #   dest_table = nil
-      #   if options[:table]
-      #     dest_table = { "projectId"  => options[:table].project_id,
-      #                     "datasetId" => options[:table].dataset_id,
-      #                     "tableId"   => options[:table].table_id }
-      #   end
-      #   default_dataset = nil
-      #   if dataset = options[:dataset]
-      #     if dataset.respond_to? :dataset_id
-      #       default_dataset = { "projectId" => dataset.project_id,
-      #                           "datasetId" => dataset.dataset_id }
-      #     else
-      #       default_dataset = { "datasetId" => dataset }
-      #     end
-      #   end
-      #   {
-      #     "configuration" => {
-      #       "query" => {
-      #         "query" => query,
-      #         # "tableDefinitions" => { ... },
-      #         "priority" => priority_value(options[:priority]),
-      #         "useQueryCache" => options[:cache],
-      #         "destinationTable" => dest_table,
-      #         "createDisposition" => create_disposition(options[:create]),
-      #         "writeDisposition" => write_disposition(options[:write]),
-      #         "allowLargeResults" => options[:large_results],
-      #         "flattenResults" => options[:flatten],
-      #         "defaultDataset" => default_dataset
-      #       }.delete_if { |_, v| v.nil? }
-      #     }.delete_if { |_, v| v.nil? }
-      #   }
-      # end
-      #
-      # def query_config query, options = {}
-      #   dataset_config = nil
-      #   dataset_config = {
-      #     "datasetId" => options[:dataset],
-      #     "projectId" => options[:project] || @project
-      #   } if options[:dataset]
-      #
-      #   {
-      #     "kind" => "bigquery#queryRequest",
-      #     "query" => query,
-      #     "maxResults" => options[:max],
-      #     "defaultDataset" => dataset_config,
-      #     "timeoutMs" => options[:timeout],
-      #     "dryRun" => options[:dryrun],
-      #     "useQueryCache" => options[:cache]
-      #   }.delete_if { |_, v| v.nil? }
-      # end
-      #
-      # ##
-      # # Job description for copy job
-      # def copy_table_config source, target, options = {}
-      #   {
-      #     "configuration" => {
-      #       "copy" => {
-      #         "sourceTable" => source,
-      #         "destinationTable" => target,
-      #         "createDisposition" => create_disposition(options[:create]),
-      #         "writeDisposition" => write_disposition(options[:write])
-      #       }.delete_if { |_, v| v.nil? },
-      #       "dryRun" => options[:dryrun]
-      #     }.delete_if { |_, v| v.nil? }
-      #   }
-      # end
-      #
-      # def link_table_config table, urls, options = {}
-      #   path = Array(urls).first
-      #   {
-      #     "configuration" => {
-      #       "link" => {
-      #         "sourceUri" => Array(urls),
-      #         "destinationTable" => table,
-      #         "createDisposition" => create_disposition(options[:create]),
-      #         "writeDisposition" => write_disposition(options[:write]),
-      #         "sourceFormat" => source_format(path, options[:format])
-      #       }.delete_if { |_, v| v.nil? },
-      #       "dryRun" => options[:dryrun]
-      #     }.delete_if { |_, v| v.nil? }
-      #   }
-      # end
-      #
-      # def extract_table_config table, storage_files, options = {}
-      #   storage_urls = Array(storage_files).map do |url|
-      #     url.respond_to?(:to_gs_url) ? url.to_gs_url : url
-      #   end
-      #   dest_format = source_format storage_urls.first, options[:format]
-      #   {
-      #     "configuration" => {
-      #       "extract" => {
-      #         "destinationUris"   => Array(storage_urls),
-      #         "sourceTable"       => table,
-      #         "destinationFormat" => dest_format,
-      #         "compression"       => options[:compression],
-      #         "fieldDelimiter"    => options[:delimiter],
-      #         "printHeader"       => options[:header]
-      #       }.delete_if { |_, v| v.nil? },
-      #       "dryRun" => options[:dryrun]
-      #     }.delete_if { |_, v| v.nil? }
-      #   }
-      # end
-      #
-      # def load_table_config table, urls, file, options = {}
-      #   path = Array(urls).first
-      #   path = Pathname(file).to_path unless file.nil?
-      #   {
-      #     "configuration" => {
-      #       "load" => {
-      #         "sourceUris"          => Array(urls),
-      #         "destinationTable"    => table,
-      #         "createDisposition"   => create_disposition(options[:create]),
-      #         "writeDisposition"    => write_disposition(options[:write]),
-      #         "sourceFormat"        => source_format(path, options[:format]),
-      #         "projectionFields"    => projection_fields(options[:projection_fields]),
-      #         "allowJaggedRows"     => options[:jagged_rows],
-      #         "allowQuotedNewlines" => options[:quoted_newlines],
-      #         "encoding"            => options[:encoding],
-      #         "fieldDelimiter"      => options[:delimiter],
-      #         "ignoreUnknownValues" => options[:ignore_unknown],
-      #         "maxBadRecords"       => options[:max_bad_records],
-      #         "quote"               => options[:quote],
-      #         "schema"              => options[:schema],
-      #         "skipLeadingRows"     => options[:skip_leading]
-      #       }.delete_if { |_, v| v.nil? },
-      #       "dryRun" => options[:dryrun]
-      #     }.delete_if { |_, v| v.nil? }
-      #   }
-      # end
-      #
-      # def create_disposition str
-      #   { "create_if_needed" => "CREATE_IF_NEEDED",
-      #     "createifneeded" => "CREATE_IF_NEEDED",
-      #     "if_needed" => "CREATE_IF_NEEDED",
-      #     "needed" => "CREATE_IF_NEEDED",
-      #     "create_never" => "CREATE_NEVER",
-      #     "createnever" => "CREATE_NEVER",
-      #     "never" => "CREATE_NEVER" }[str.to_s.downcase]
-      # end
-      #
-      # def write_disposition str
-      #   { "write_truncate" => "WRITE_TRUNCATE",
-      #     "writetruncate" => "WRITE_TRUNCATE",
-      #     "truncate" => "WRITE_TRUNCATE",
-      #     "write_append" => "WRITE_APPEND",
-      #     "writeappend" => "WRITE_APPEND",
-      #     "append" => "WRITE_APPEND",
-      #     "write_empty" => "WRITE_EMPTY",
-      #     "writeempty" => "WRITE_EMPTY",
-      #     "empty" => "WRITE_EMPTY" }[str.to_s.downcase]
-      # end
-      #
-      # def priority_value str
-      #   { "batch" => "BATCH",
-      #     "interactive" => "INTERACTIVE" }[str.to_s.downcase]
-      # end
-      #
-      # def source_format path, format
-      #   val = { "csv" => "CSV",
-      #           "json" => "NEWLINE_DELIMITED_JSON",
-      #           "newline_delimited_json" => "NEWLINE_DELIMITED_JSON",
-      #           "avro" => "AVRO",
-      #           "datastore" => "DATASTORE_BACKUP",
-      #           "datastore_backup" => "DATASTORE_BACKUP"}[format.to_s.downcase]
-      #   return val unless val.nil?
-      #   return nil if path.nil?
-      #   return "CSV" if path.end_with? ".csv"
-      #   return "NEWLINE_DELIMITED_JSON" if path.end_with? ".json"
-      #   return "AVRO" if path.end_with? ".avro"
-      #   return "DATASTORE_BACKUP" if path.end_with? ".backup_info"
-      #   nil
-      # end
-      #
-      # def projection_fields array_or_str
-      #   Array(array_or_str) unless array_or_str.nil?
-      # end
-      #
-      # # rubocop:enable all
+      # rubocop:disable all
+      # Disabled rubocop because the API is verbose and so these methods
+      # are going to be verbose.
+
+      ##
+      # Job description for query job
+      def query_table_config query, options
+        dest_table = nil
+        if options[:table]
+          dest_table = API::TableReference.new(
+            project_id: options[:table].project_id,
+            dataset_id: options[:table].dataset_id,
+            table_id: options[:table].table_id
+          )
+        end
+        default_dataset = nil
+        if dataset = options[:dataset]
+          if dataset.respond_to? :dataset_id
+            default_dataset = API::DatasetReference.new(
+              project_id: dataset.project_id,
+              dataset_id: dataset.dataset_id
+            )
+          else
+            default_dataset = API::DatasetReference.new dataset_id: dataset
+          end
+        end
+        API::Job.new(
+          configuration: API::JobConfiguration.new(
+            query: API::JobConfigurationQuery.new(
+              query: query,
+              # tableDefinitions: { ... },
+              priority: priority_value(options[:priority]),
+              use_query_cache: options[:cache],
+              destination_table: dest_table,
+              create_disposition: create_disposition(options[:create]),
+              write_disposition: write_disposition(options[:write]),
+              allow_large_results: options[:large_results],
+              flatten_results: options[:flatten],
+              default_dataset: default_dataset
+            )
+          )
+        )
+      end
+
+      def query_config query, options = {}
+        dataset_config = nil
+        dataset_config = API::DatasetReference.new(
+          dataset_id: options[:dataset],
+          project_id: options[:project] || @project
+        ) if options[:dataset]
+
+        API::QueryRequest.new(
+          query: query,
+          max_results: options[:max],
+          default_dataset: dataset_config,
+          timeout_ms: options[:timeout],
+          dry_run: options[:dryrun],
+          use_query_cache: options[:cache]
+        )
+      end
+
+      ##
+      # Job description for copy job
+      def copy_table_config source, target, options = {}
+        API::Job.new(
+          configuration: API::JobConfiguration.new(
+            copy: API::JobConfigurationTableCopy.new(
+              source_table: source,
+              destination_table: target,
+              create_disposition: create_disposition(options[:create]),
+              write_disposition: write_disposition(options[:write])
+            ),
+            dry_run: options[:dryrun]
+          )
+        )
+      end
+
+      def link_table_config table, urls, options = {} # TODO: remove
+        path = Array(urls).first
+        API::Job.new(
+          configuration: API::JobConfiguration.new(
+            link: API::Dataset.new(
+              source_uri: Array(urls),
+              destination_table: table,
+              create_disposition: create_disposition(options[:create]),
+              write_disposition: write_disposition(options[:write]),
+              source_format: source_format(path, options[:format])
+            ),
+            dry_run: options[:dryrun]
+          )
+        )
+      end
+
+      def extract_table_config table, storage_files, options = {}
+        storage_urls = Array(storage_files).map do |url|
+          url.respond_to?(:to_gs_url) ? url.to_gs_url : url
+        end
+        dest_format = source_format storage_urls.first, options[:format]
+        API::Job.new(
+          configuration: API::JobConfiguration.new(
+            extract: API::JobConfigurationExtract.new(
+              destination_uris: Array(storage_urls),
+              source_table: table,
+              destination_format: dest_format,
+              compression: options[:compression],
+              field_delimiter: options[:delimiter],
+              print_header: options[:header]
+            ),
+            dry_run: options[:dryrun]
+          )
+        )
+      end
+
+      def load_table_config table, urls, file, options = {}
+        path = Array(urls).first
+        path = Pathname(file).to_path unless file.nil?
+        API::Job.new(
+          configuration: API::JobConfiguration.new(
+            load: API::JobConfigurationLoad.new(
+              source_uris: Array(urls),
+              destination_table: table,
+              create_disposition: create_disposition(options[:create]),
+              write_disposition: write_disposition(options[:write]),
+              source_format: source_format(path, options[:format]),
+              projection_fields: projection_fields(options[:projection_fields]),
+              allow_jagged_rows: options[:jagged_rows],
+              allow_quoted_newlines: options[:quoted_newlines],
+              encoding: options[:encoding],
+              field_delimiter: options[:delimiter],
+              ignore_unknown_values: options[:ignore_unknown],
+              max_bad_records: options[:max_bad_records],
+              quote: options[:quote],
+              schema: options[:schema],
+              skip_leading_rows: options[:skip_leading]
+            ),
+            dry_run: options[:dryrun]
+          )
+        )
+      end
+
+      def create_disposition str
+        { "create_if_needed" => "CREATE_IF_NEEDED",
+          "createifneeded" => "CREATE_IF_NEEDED",
+          "if_needed" => "CREATE_IF_NEEDED",
+          "needed" => "CREATE_IF_NEEDED",
+          "create_never" => "CREATE_NEVER",
+          "createnever" => "CREATE_NEVER",
+          "never" => "CREATE_NEVER" }[str.to_s.downcase]
+      end
+
+      def write_disposition str
+        { "write_truncate" => "WRITE_TRUNCATE",
+          "writetruncate" => "WRITE_TRUNCATE",
+          "truncate" => "WRITE_TRUNCATE",
+          "write_append" => "WRITE_APPEND",
+          "writeappend" => "WRITE_APPEND",
+          "append" => "WRITE_APPEND",
+          "write_empty" => "WRITE_EMPTY",
+          "writeempty" => "WRITE_EMPTY",
+          "empty" => "WRITE_EMPTY" }[str.to_s.downcase]
+      end
+
+      def priority_value str
+        { "batch" => "BATCH",
+          "interactive" => "INTERACTIVE" }[str.to_s.downcase]
+      end
+
+      def source_format path, format
+        val = { "csv" => "CSV",
+                "json" => "NEWLINE_DELIMITED_JSON",
+                "newline_delimited_json" => "NEWLINE_DELIMITED_JSON",
+                "avro" => "AVRO",
+                "datastore" => "DATASTORE_BACKUP",
+                "datastore_backup" => "DATASTORE_BACKUP"}[format.to_s.downcase]
+        return val unless val.nil?
+        return nil if path.nil?
+        return "CSV" if path.end_with? ".csv"
+        return "NEWLINE_DELIMITED_JSON" if path.end_with? ".json"
+        return "AVRO" if path.end_with? ".avro"
+        return "DATASTORE_BACKUP" if path.end_with? ".backup_info"
+        nil
+      end
+
+      def projection_fields array_or_str
+        Array(array_or_str) unless array_or_str.nil?
+      end
+
+      # rubocop:enable all
     end
   end
 end

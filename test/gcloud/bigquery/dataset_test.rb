@@ -59,7 +59,7 @@ describe Gcloud::Bigquery::Dataset, :mock_bigquery do
   let(:dataset_hash) { random_dataset_hash dataset_id, dataset_name, dataset_description, default_expiration }
   let(:dataset_gapi) { Google::Apis::BigqueryV2::Dataset.from_json dataset_hash.to_json }
   let(:dataset) { Gcloud::Bigquery::Dataset.from_gapi dataset_gapi, bigquery.service }
-focus
+
   it "knows its attributes" do
     dataset.name.must_equal dataset_name
     dataset.description.must_equal dataset_description
@@ -68,7 +68,7 @@ focus
     dataset.api_url.must_equal api_url
     dataset.location.must_equal location_code
   end
-focus
+
   it "knows its creation and modification times" do
     now = Time.now
 
@@ -78,7 +78,7 @@ focus
     dataset.gapi.last_modified_time = (now.to_f * 1000).floor
     dataset.modified_at.must_be_close_to now
   end
-focus
+
   it "can delete itself" do
     mock = Minitest::Mock.new
     mock.expect :delete_dataset, nil,
@@ -89,7 +89,7 @@ focus
 
     mock.verify
   end
-focus
+
   it "can delete itself and all table data" do
     mock = Minitest::Mock.new
     mock.expect :delete_dataset, nil,

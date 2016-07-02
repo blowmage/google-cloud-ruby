@@ -215,6 +215,11 @@ class MockBigquery < Minitest::Spec
     addl.include? :mock_bigquery
   end
 
+  def random_dataset_gapi id = nil, name = nil, description = nil, default_expiration = nil, location = "US"
+    json = random_dataset_hash(id, name, description, default_expiration, location).to_json
+    Google::Apis::BigqueryV2::Dataset.from_json json
+  end
+
   def random_dataset_hash id = nil, name = nil, description = nil, default_expiration = nil, location = "US"
     id ||= "my_dataset"
     name ||= "My Dataset"
@@ -253,6 +258,11 @@ class MockBigquery < Minitest::Spec
       },
       "friendlyName" => name
     }
+  end
+
+  def random_table_gapi dataset, id = nil, name = nil, description = nil, project_id = nil
+    json = random_table_hash(dataset, id, name, description, project_id).to_json
+    Google::Apis::BigqueryV2::Table.from_json json
   end
 
   def random_table_hash dataset, id = nil, name = nil, description = nil, project_id = nil
@@ -318,6 +328,34 @@ class MockBigquery < Minitest::Spec
       "friendlyName" => name,
       "type" => "TABLE"
     }
+  end
+
+  def source_table_gapi
+    Google::Apis::BigqueryV2::Table.from_json source_table_json
+  end
+
+  def source_table_json
+    hash = random_table_hash "getting_replaced_dataset_id"
+    hash["tableReference"] = {
+      "projectId" => "source_project_id",
+      "datasetId" => "source_dataset_id",
+      "tableId"   => "source_table_id"
+    }
+    hash.to_json
+  end
+
+  def destination_table_gapi
+    Google::Apis::BigqueryV2::Table.from_json destination_table_json
+  end
+
+  def destination_table_json
+    hash = random_table_hash "getting_replaced_dataset_id"
+    hash["tableReference"] = {
+      "projectId" => "target_project_id",
+      "datasetId" => "target_dataset_id",
+      "tableId"   => "target_table_id"
+    }
+    hash.to_json
   end
 
   def random_view_hash dataset, id = nil, name = nil, description = nil

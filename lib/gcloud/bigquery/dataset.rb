@@ -584,12 +584,8 @@ module Gcloud
                     flatten: flatten }
         options[:dataset] ||= self
         ensure_service!
-        resp = service.query_job query, options
-        if resp.success?
-          Job.from_gapi resp.data, service
-        else
-          fail ApiError.from_response(resp)
-        end
+        gapi = service.query_job query, options
+        Job.from_gapi gapi, service
       end
 
       ##

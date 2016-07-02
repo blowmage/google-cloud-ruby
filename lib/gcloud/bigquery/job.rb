@@ -55,8 +55,8 @@ module Gcloud
     #
     class Job
       ##
-      # @private The Connection object.
-      attr_accessor :connection
+      # @private The Service object.
+      attr_accessor :service
 
       ##
       # @private The Google API Client object.
@@ -65,7 +65,7 @@ module Gcloud
       ##
       # @private Create an empty Job object.
       def initialize
-        @connection = nil
+        @service = nil
         @gapi = {}
       end
 
@@ -154,7 +154,7 @@ module Gcloud
       # @see https://cloud.google.com/bigquery/docs/reference/v2/jobs Jobs API
       #   reference
       def configuration
-        @gapi.configuration.to_h
+        @gapi.configuration
       end
       alias_method :config, :configuration
 
@@ -164,7 +164,7 @@ module Gcloud
       # @see https://cloud.google.com/bigquery/docs/reference/v2/jobs Jobs API
       #   reference
       def statistics
-        @gapi.statistics.to_h
+        @gapi.statistics
       end
       alias_method :stats, :statistics
 
@@ -172,7 +172,7 @@ module Gcloud
       # The job's status. Returns a hash. The values contained in the hash are
       # also exposed by {#state}, {#error}, and {#errors}.
       def status
-        @gapi.status.to_h
+        @gapi.status
       end
 
       ##
@@ -190,38 +190,30 @@ module Gcloud
       #   }
       #
       def error
-        status[:error_result]
+        status.error_result
       end
 
       ##
       # The errors for the job, if any errors have occurred. Returns an array
       # of hash objects. See {#error}.
       def errors
-        Array status[:errors]
+        Array status.errors
       end
 
       ##
       # Created a new job with the current configuration.
       def rerun!
-        ensure_connection!
-        resp = connection.insert_job configuration
-        if resp.success?
-          Job.from_gapi resp.data, connection
-        else
-          fail ApiError.from_response(resp)
-        end
+        ensure_service!
+        gapi = service.insert_job configuration
+        Job.from_gapi gapi, service
       end
 
       ##
       # Reloads the job with current data from the BigQuery service.
       def reload!
-        ensure_connection!
-        resp = connection.get_job job_id
-        if resp.success?
-          @gapi = resp.data
-        else
-          fail ApiError.from_response(resp)
-        end
+        ensure_service!
+        gapi = service.get_job job_id
+        @gapi = gapi
       end
       alias_method :refresh!, :reload!
 
@@ -257,7 +249,7 @@ module Gcloud
         klass = klass_for gapi
         klass.new.tap do |f|
           f.gapi = gapi
-          f.connection = conn
+          f.service = conn
         end
       end
 
@@ -265,8 +257,8 @@ module Gcloud
 
       ##
       # Raise an error unless an active connection is available.
-      def ensure_connection!
-        fail "Must have active connection" unless connection
+      def ensure_service!
+        fail "Must have active connection" unless service
       end
 
       ##
@@ -285,14 +277,12 @@ module Gcloud
       end
 
       def retrieve_table project_id, dataset_id, table_id
-        ensure_connection!
-        resp = connection.get_project_table project_id, dataset_id, table_id
-        if resp.success?
-          Table.from_gapi resp.data, connection
-        else
-          return nil if resp.status == 404
-          fail ApiError.from_response(resp)
-        end
+        ensure_service!
+        gapi = service.get_project_table project_id, dataset_id, table_id
+        Table.from_gapi gapi, service
+      rescue Google::Apis::ClientError => e
+        raise e unless e.status_code == 404 # TODO: convert e to Gcloud::Error
+        nil
       end
     end
   end
