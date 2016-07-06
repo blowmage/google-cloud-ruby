@@ -228,10 +228,6 @@ module Gcloud
         service.insert_job @project, copy_table_config(source, target, options)
       end
 
-      def link_table table, urls, options = {}
-        service.insert_job @project, link_table_config(table, urls, options)
-      end
-
       def extract_table table, storage_files, options = {}
         service.insert_job @project, extract_table_config(table, storage_files, options)
       end
@@ -419,22 +415,6 @@ module Gcloud
               destination_table: target,
               create_disposition: create_disposition(options[:create]),
               write_disposition: write_disposition(options[:write])
-            ),
-            dry_run: options[:dryrun]
-          )
-        )
-      end
-
-      def link_table_config table, urls, options = {} # TODO: remove
-        path = Array(urls).first
-        API::Job.new(
-          configuration: API::JobConfiguration.new(
-            link: API::Dataset.new(
-              source_uri: Array(urls),
-              destination_table: table,
-              create_disposition: create_disposition(options[:create]),
-              write_disposition: write_disposition(options[:write]),
-              source_format: source_format(path, options[:format])
             ),
             dry_run: options[:dryrun]
           )
