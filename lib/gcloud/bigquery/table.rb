@@ -189,7 +189,7 @@ module Gcloud
       #
       def api_url
         ensure_full_data!
-        @gapi.selfLink
+        @gapi.self_link
       end
 
       ##
@@ -406,9 +406,9 @@ module Gcloud
       # @!group Data
       #
       def data token: nil, max: nil, start: nil
-        ensure_connection!
+        ensure_service!
         options = { token: token, max: max, start: start }
-        resp = connection.list_tabledata dataset_id, table_id, options
+        resp = service.list_tabledata dataset_id, table_id, options
         if resp.success?
           Data.from_response resp, self
         else
@@ -743,9 +743,9 @@ module Gcloud
       #
       def insert rows, skip_invalid: nil, ignore_unknown: nil
         rows = [rows] if rows.is_a? Hash
-        ensure_connection!
+        ensure_service!
         options = { skip_invalid: skip_invalid, ignore_unknown: ignore_unknown }
-        resp = connection.insert_tabledata dataset_id, table_id, rows, options
+        resp = service.insert_tabledata dataset_id, table_id, rows, options
         if resp.success?
           InsertResponse.from_gapi rows, resp.data
         else
@@ -771,13 +771,9 @@ module Gcloud
       # @!group Lifecycle
       #
       def delete
-        ensure_connection!
-        resp = connection.delete_table dataset_id, table_id
-        if resp.success?
-          true
-        else
-          fail ApiError.from_response(resp)
-        end
+        ensure_service!
+        service.delete_table dataset_id, table_id
+        true
       end
 
       ##
@@ -805,7 +801,7 @@ module Gcloud
       protected
 
       ##
-      # Raise an error unless an active connection is available.
+      # Raise an error unless an active service is available.
       def ensure_service!
         fail "Must have active connection" unless service
       end
@@ -844,18 +840,18 @@ module Gcloud
       def load_resumable file, options = {}
         chunk_size = Gcloud::Upload.verify_chunk_size options[:chunk_size],
                                                       file.length
-        resp = connection.load_resumable table_ref, file, chunk_size, options
+        resp = service.load_resumable table_ref, file, chunk_size, options
         if resp.success?
-          Job.from_gapi resp.data, connection
+          Job.from_gapi resp.data, service
         else
           fail ApiError.from_response(resp)
         end
       end
 
       def load_multipart file, options = {}
-        resp = connection.load_multipart table_ref, file, options
+        resp = service.load_multipart table_ref, file, options
         if resp.success?
-          Job.from_gapi resp.data, connection
+          Job.from_gapi resp.data, service
         else
           fail ApiError.from_response(resp)
         end

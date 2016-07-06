@@ -140,11 +140,7 @@ module Gcloud
       # Deletes the table specified by tableId from the dataset.
       # If the table contains data, all the data will be deleted.
       def delete_table dataset_id, table_id
-        execute(
-          api_method: @bigquery.tables.delete,
-          parameters: { projectId: @project, datasetId: dataset_id,
-                        tableId: table_id }
-        )
+        service.delete_table @project, dataset_id, table_id
       end
 
       ##
