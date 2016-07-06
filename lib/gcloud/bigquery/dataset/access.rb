@@ -460,7 +460,7 @@ module Gcloud
           if view.respond_to? :table_ref
             view.table_ref
           else
-            Connection.table_ref_from_s view, @gapi.table_reference
+            Service.table_ref_from_s view, @gapi.dataset_reference
           end
         end
 

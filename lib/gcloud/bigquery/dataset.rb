@@ -19,6 +19,7 @@ require "gcloud/bigquery/table"
 require "gcloud/bigquery/table/schema"
 require "gcloud/bigquery/dataset/list"
 require "gcloud/bigquery/dataset/access"
+require "google/apis/bigquery_v2"
 
 module Gcloud
   module Bigquery
@@ -670,9 +671,9 @@ module Gcloud
         return if attributes.empty?
         ensure_service!
         args = Hash[attributes.map do |attr|
-          [attr, @gapi.send(:attr)]
+          [attr, @gapi.send(attr)]
         end]
-        patch_gapi = Google::Api::BigqueryV2::Dataset.new args
+        patch_gapi = Google::Apis::BigqueryV2::Dataset.new args
         @gapi = service.patch_dataset dataset_id, patch_gapi
       end
 
@@ -685,12 +686,8 @@ module Gcloud
 
       def reload_gapi!
         ensure_service!
-        resp = service.get_dataset dataset_id
-        if resp.success?
-          @gapi = resp.data
-        else
-          fail ApiError.from_response(resp)
-        end
+        gapi = service.get_dataset dataset_id
+        @gapi = gapi
       end
 
       def data_complete?

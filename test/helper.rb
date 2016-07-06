@@ -260,6 +260,10 @@ class MockBigquery < Minitest::Spec
     }
   end
 
+  def patch_dataset_gapi dataset_gapi, attrs
+    Google::Apis::BigqueryV2::Dataset.new({ dataset_reference: dataset_gapi.dataset_reference }.merge(attrs))
+  end
+
   def random_table_gapi dataset, id = nil, name = nil, description = nil, project_id = nil
     json = random_table_hash(dataset, id, name, description, project_id).to_json
     Google::Apis::BigqueryV2::Table.from_json json
@@ -356,6 +360,11 @@ class MockBigquery < Minitest::Spec
       "tableId"   => "target_table_id"
     }
     hash.to_json
+  end
+
+  def random_view_gapi dataset, id = nil, name = nil, description = nil
+    json = random_view_hash(dataset, id, name, description).to_json
+    Google::Apis::BigqueryV2::Table.from_json json
   end
 
   def random_view_hash dataset, id = nil, name = nil, description = nil
