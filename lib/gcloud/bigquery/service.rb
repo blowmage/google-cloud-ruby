@@ -102,16 +102,7 @@ module Gcloud
       # Lists all tables in the specified dataset.
       # Requires the READER dataset role.
       def list_tables dataset_id, options = {}
-        params = { projectId: @project,
-                   datasetId: dataset_id,
-                   pageToken: options.delete(:token),
-                   maxResults: options.delete(:max)
-                 }.delete_if { |_, v| v.nil? }
-
-        execute(
-          api_method: @bigquery.tables.list,
-          parameters: params
-        )
+        service.list_tables @project, dataset_id, max_results: options[:max], page_token: options[:token]
       end
 
       def get_project_table project_id, dataset_id, table_id

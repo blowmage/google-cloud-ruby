@@ -16,7 +16,6 @@
 require "json"
 require "gcloud/bigquery/errors"
 require "gcloud/bigquery/table"
-require "gcloud/bigquery/table/schema"
 require "gcloud/bigquery/dataset/list"
 require "gcloud/bigquery/dataset/access"
 require "google/apis/bigquery_v2"
@@ -290,13 +289,11 @@ module Gcloud
       #   length is 1,024 characters.
       # @param [String] name A descriptive name for the table.
       # @param [String] description A user-friendly description of the table.
-      # @param [Hash] schema A hash specifying fields and data types for the
-      #   table. A block may be passed instead (see examples.) For the format of
-      #   this hash, see the [Tables resource
-      #   ](https://cloud.google.com/bigquery/docs/reference/v2/tables#resource)
-      #   .
-      # @yield [schema] a block for setting the schema
-      # @yieldparam [Table::Schema] schema the object accepting the schema
+      # @param [Array<Schema::Field>] fields An array of Schema::Field objects
+      #   specifying the schema's data types for the table. The schema may also
+      #   be configured when passing a block.
+      # @yield [table] a block for setting the table
+      # @yieldparam [Table] table the table object to be updated
       #
       # @return [Gcloud::Bigquery::Table]
       #
@@ -318,86 +315,78 @@ module Gcloud
       #                                name: "My Table",
       #                                description: "A description of my table."
       #
-      # @example You can define the table's schema using a block.
+      # @example The table's schema fields can be passed as an argument.
       #   require "gcloud"
       #
       #   gcloud = Gcloud.new
       #   bigquery = gcloud.bigquery
       #   dataset = bigquery.dataset "my_dataset"
-      #   table = dataset.create_table "my_table" do |schema|
-      #     schema.string "first_name", mode: :required
-      #     schema.record "cities_lived", mode: :repeated do |nested_schema|
-      #       nested_schema.string "place", mode: :required
-      #       nested_schema.integer "number_of_years", mode: :required
+      #
+      #   schema_fields = [
+      #     Gcloud::Bigquery::Schema::Field.new(
+      #       "first_name", :string, mode: :required),
+      #     Gcloud::Bigquery::Schema::Field.new(
+      #       "cities_lived", :record, mode: :repeated
+      #       fields: [
+      #         Gcloud::Bigquery::Schema::Field.new(
+      #           "place", :string, mode: :required),
+      #         Gcloud::Bigquery::Schema::Field.new(
+      #           "number_of_years", :integer, mode: :required),
+      #         ])
+      #   ]
+      #   table = dataset.create_table "my_table", fields: schema_fields
+      #
+      # @example Or the table's schema can be configured with the block.
+      #   require "gcloud"
+      #
+      #   gcloud = Gcloud.new
+      #   bigquery = gcloud.bigquery
+      #   dataset = bigquery.dataset "my_dataset"
+      #
+      #   table = dataset.create_table "my_table" do |t|
+      #     t.schema.string "first_name", mode: :required
+      #     t.schema.record "cities_lived", mode: :required do |s|
+      #       s.string "place", mode: :required
+      #       s.integer "number_of_years", mode: :required
       #     end
       #   end
       #
-      # @example You can pass the table's schema as a hash.
+      # @example You can define the schema using a nested block.
       #   require "gcloud"
       #
       #   gcloud = Gcloud.new
       #   bigquery = gcloud.bigquery
       #   dataset = bigquery.dataset "my_dataset"
-      #
-      #   schema = {
-      #     "fields" => [
-      #       {
-      #         "name" => "first_name",
-      #         "type" => "STRING",
-      #         "mode" => "REQUIRED"
-      #       },
-      #       {
-      #         "name" => "cities_lived",
-      #         "type" => "RECORD",
-      #         "mode" => "REPEATED",
-      #         "fields" => [
-      #           {
-      #             "name" => "place",
-      #             "type" => "STRING",
-      #             "mode" => "REQUIRED"
-      #           },
-      #           {
-      #             "name" => "number_of_years",
-      #             "type" => "INTEGER",
-      #             "mode" => "REQUIRED"
-      #           }
-      #         ]
-      #       }
-      #     ]
-      #   }
-      #   table = dataset.create_table "my_table", schema: schema
+      #   table = dataset.create_table "my_table" do |t|
+      #     t.name = "My Table",
+      #     t.description = "A description of my table."
+      #     t.schema do |s|
+      #       s.string "first_name", mode: :required
+      #       s.record "cities_lived", mode: :repeated do |r|
+      #         r.string "place", mode: :required
+      #         r.integer "number_of_years", mode: :required
+      #       end
+      #     end
+      #   end
       #
       # @!group Table
       #
-      def create_table table_id, name: nil, description: nil, schema: nil
+      def create_table table_id, name: nil, description: nil, fields: nil
         ensure_service!
         new_tb = Google::Apis::BigqueryV2::Table.new(
           table_reference: Google::Apis::BigqueryV2::TableReference.new(
             project_id: project_id, dataset_id: dataset_id, table_id: table_id),
         )
-        updater = Table::Updater.new(new_tb).tap do |b|
-          b.name = name unless name.nil?
-          b.description = description unless description.nil?
+        updater = Table::Updater.new(new_tb).tap do |tb|
+          tb.name = name unless name.nil?
+          tb.description = description unless description.nil?
+          tb.schema.fields = fields unless fields.nil?
         end
 
-        if block_given?
-          yield updater
-          updater.check_for_mutated_schema!
-        end
+        yield updater if block_given?
 
-        gapi = service.insert_table dataset_id, table_id, new_tb
+        gapi = service.insert_table dataset_id, updater.to_gapi
         Table.from_gapi gapi, service
-
-        # if block_given?
-        #   if schema
-        #     fail ArgumentError, "only schema block or schema option is allowed"
-        #   end
-        #   schema_builder = Table::Schema.new nil
-        #   yield schema_builder
-        #   schema = schema_builder.schema if schema_builder.changed?
-        # end
-        # options = { name: name, description: description, schema: schema }
-        # insert_table table_id, options
       end
 
       ##
@@ -435,8 +424,15 @@ module Gcloud
       # @!group Table
       #
       def create_view table_id, query, name: nil, description: nil
-        options = { query: query, name: name, description: description }
-        insert_table table_id, options
+        new_view_opts = {
+          table_reference: Google::Apis::BigqueryV2::TableReference.new(
+            project_id: project_id, dataset_id: dataset_id, table_id: table_id),
+          friendly_name: name, description: description, query: query
+        }.delete_if { |_, v| v.nil? }
+        new_view = Google::Apis::BigqueryV2::Table.new new_view_opts
+
+        gapi = service.insert_table dataset_id, new_view
+        Table.from_gapi gapi, service
       end
 
       ##
@@ -460,12 +456,8 @@ module Gcloud
       #
       def table table_id
         ensure_service!
-        resp = service.get_table dataset_id, table_id
-        if resp.success?
-          Table.from_gapi resp.data, service
-        else
-          nil
-        end
+        gapi = service.get_table dataset_id, table_id
+        Table.from_gapi gapi, service
       end
 
       ##
@@ -505,12 +497,8 @@ module Gcloud
       def tables token: nil, max: nil
         ensure_service!
         options = { token: token, max: max }
-        resp = service.list_tables dataset_id, options
-        if resp.success?
-          Table::List.from_response resp, service, dataset_id, max
-        else
-          fail ApiError.from_response(resp)
-        end
+        gapi = service.list_tables dataset_id, options
+        Table::List.from_gapi gapi, service, dataset_id, max
       end
 
       ##
@@ -670,10 +658,10 @@ module Gcloud
       def patch_gapi! *attributes
         return if attributes.empty?
         ensure_service!
-        args = Hash[attributes.map do |attr|
+        patch_args = Hash[attributes.map do |attr|
           [attr, @gapi.send(attr)]
         end]
-        patch_gapi = Google::Apis::BigqueryV2::Dataset.new args
+        patch_gapi = Google::Apis::BigqueryV2::Dataset.new patch_args
         @gapi = service.patch_dataset dataset_id, patch_gapi
       end
 

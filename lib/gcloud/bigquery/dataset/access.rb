@@ -95,7 +95,7 @@ module Gcloud
         def freeze
           @gapi = @gapi.dup.freeze
           @gapi.access.freeze
-          self
+          super
         end
 
         ##

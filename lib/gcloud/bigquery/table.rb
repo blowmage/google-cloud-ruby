@@ -16,7 +16,7 @@
 require "gcloud/bigquery/view"
 require "gcloud/bigquery/data"
 require "gcloud/bigquery/table/list"
-require "gcloud/bigquery/table/schema"
+require "gcloud/bigquery/schema"
 require "gcloud/bigquery/errors"
 require "gcloud/bigquery/insert_response"
 require "gcloud/upload"
@@ -76,7 +76,7 @@ module Gcloud
       # @private Create an empty Table object.
       def initialize
         @service = nil
-        @gapi = {}
+        @gapi = Google::Apis::BigqueryV2::Table.new
       end
 
       ##
@@ -168,7 +168,8 @@ module Gcloud
       # @!group Attributes
       #
       def name= new_name
-        patch_gapi! name: new_name
+        @gapi.update! friendly_name: new_name
+        patch_gapi! :friendly_name
       end
 
       ##
@@ -207,7 +208,8 @@ module Gcloud
       # @!group Attributes
       #
       def description= new_description
-        patch_gapi! description: new_description
+        @gapi.update! description: new_description
+        patch_gapi! :description
       end
 
       ##
@@ -328,52 +330,19 @@ module Gcloud
       #
       def schema replace: false
         ensure_full_data!
-        ensure_full_data!
-        schema_builder = Schema::Updater.new @gapi
+        schema_builder = Schema.from_gapi @gapi
         if block_given?
+          if replace
+            # Only replace if we have a block, force changed? to be true
+            @gapi.update! \
+              schema: Google::Apis::BigqueryV2::TableSchema.new(fields: [])
+            schema_builder.instance_variable_set :@fields, []
+          end
           yield schema_builder
+          schema_builder.check_for_mutated_schema!
           patch_gapi! :schema if schema_builder.changed?
         end
         schema_builder.freeze
-      end
-
-      ##
-      # Updates the schema of the table.
-      # To update the schema using a block instead, use #schema.
-      #
-      # @param [Hash] new_schema A hash containing keys and values as specified
-      #   by the Google Cloud BigQuery [Rest API
-      #   ](https://cloud.google.com/bigquery/docs/reference/v2/tables#resource)
-      #   .
-      #
-      # @example
-      #   require "gcloud"
-      #
-      #   gcloud = Gcloud.new
-      #   bigquery = gcloud.bigquery
-      #   dataset = bigquery.dataset "my_dataset"
-      #   table = dataset.create_table "my_table"
-      #
-      #   schema = {
-      #     "fields" => [
-      #       {
-      #         "name" => "first_name",
-      #         "type" => "STRING",
-      #         "mode" => "REQUIRED"
-      #       },
-      #       {
-      #         "name" => "age",
-      #         "type" => "INTEGER",
-      #         "mode" => "REQUIRED"
-      #       }
-      #     ]
-      #   }
-      #   table.schema = schema
-      #
-      # @!group Attributes
-      #
-      def schema= new_schema
-        patch_gapi! schema: new_schema
       end
 
       ##
@@ -382,10 +351,7 @@ module Gcloud
       # @!group Attributes
       #
       def fields
-        f = schema["fields"]
-        f = f.to_hash if f.respond_to? :to_hash
-        f = [] if f.nil?
-        f
+        schema.fields
       end
 
       ##
@@ -394,7 +360,7 @@ module Gcloud
       # @!group Attributes
       #
       def headers
-        fields.map { |f| f["name"] }
+        fields.map(&:name)
       end
 
       ##
@@ -844,10 +810,14 @@ module Gcloud
         fail "Must have active connection" unless service
       end
 
-      def patch_gapi! options = {}
+      def patch_gapi! *attributes
+        return if attributes.empty?
         ensure_service!
-        gapi = service.patch_table dataset_id, table_id, options
-        @gapi = gapi
+        patch_args = Hash[attributes.map do |attr|
+          [attr, @gapi.send(attr)]
+        end]
+        patch_gapi = Google::Apis::BigqueryV2::Table.new patch_args
+        @gapi = service.patch_table dataset_id, table_id, patch_gapi
       end
 
       def self.class_for gapi
@@ -950,33 +920,46 @@ module Gcloud
           @gapi = gapi
         end
 
-        def schema
-          # Same as Dataset#access, but not frozen
-          @original_access_hashes = Array(@gapi.access).map(&:to_h)
+        def schema replace: false
+          # Same as Table#schema, but not frozen
           # TODO: make sure to call ensure_full_data! on Dataset#update
-          access_builder = Access.new @gapi
+          @schema ||= Schema.from_gapi @gapi
           if block_given?
-            yield access_builder
-            patch_gapi! :access if access_builder.changed?
+            if replace
+              # Only replace if we have a block, force changed? to be true
+              @gapi.update! \
+                schema: Google::Apis::BigqueryV2::TableSchema.new(fields: [])
+              @schema.instance_variable_set :@fields, []
+            end
+            yield @schema
+            check_for_mutated_schema!
           end
-          access_builder
+          # Do not freeze on updater, allow modifications
+          @schema
         end
 
         ##
         # Make sure any access changes are saved
-        def check_for_mutated_access!
-          return if @original_access_hashes.nil?
-          if @original_access_hashes != @gapi.access.map(&:to_h)
-            patch_gapi! :access
+        def check_for_mutated_schema!
+          return if @schema.nil?
+          @schema.check_for_mutated_schema!
+          if @schema.changed?
+            patch_gapi! :schema
           end
         end
 
         def to_gapi
-          check_for_mutable_cors!
+          check_for_mutated_schema!
           @gapi
         end
 
         protected
+
+        ##
+        # Change to a NOOP
+        def ensure_full_data!
+          # Do nothing because we trust the gapi is full before we get here.
+        end
 
         ##
         # Queue up all the updates instead of making them.
