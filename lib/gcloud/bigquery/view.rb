@@ -165,7 +165,7 @@ module Gcloud
       #
       def api_url
         ensure_full_data!
-        @gapi.selfLink
+        @gapi.self_link
       end
 
       ##
@@ -308,7 +308,9 @@ module Gcloud
       # @!group Lifecycle
       #
       def query= new_query
-        patch_gapi! query: new_query
+        @gapi.view ||= Google::Apis::BigqueryV2::ViewDefinition.new
+        @gapi.view.update! query: new_query
+        patch_view_gapi! :query
       end
 
       ##
@@ -381,12 +383,8 @@ module Gcloud
       #
       def delete
         ensure_service!
-        resp = service.delete_table dataset_id, table_id
-        if resp.success?
-          true
-        else
-          fail ApiError.from_response(resp)
-        end
+        gapi = service.delete_table dataset_id, table_id
+        true
       end
 
       ##
@@ -396,12 +394,8 @@ module Gcloud
       #
       def reload!
         ensure_service!
-        resp = service.get_table dataset_id, table_id
-        if resp.success?
-          @gapi = resp.data
-        else
-          fail ApiError.from_response(resp)
-        end
+        gapi = service.get_table dataset_id, table_id
+        @gapi = gapi
       end
       alias_method :refresh!, :reload!
 
@@ -424,10 +418,25 @@ module Gcloud
 
       def patch_gapi! *attributes
         return if attributes.empty?
-        ensure_service!
         patch_args = Hash[attributes.map do |attr|
           [attr, @gapi.send(attr)]
         end]
+        patch_table_gapi patch_args
+      end
+
+      def patch_view_gapi! *attributes
+        return if attributes.empty?
+        patch_args = Hash[attributes.map do |attr|
+          [attr, @gapi.view.send(attr)]
+        end]
+        patch_view_args = Google::Apis::BigqueryV2::ViewDefinition.new(
+          patch_args
+        )
+        patch_table_gapi view: patch_view_args
+      end
+
+      def patch_table_gapi patch_args
+        ensure_service!
         patch_gapi = Google::Apis::BigqueryV2::Table.new patch_args
         @gapi = service.patch_table dataset_id, table_id, patch_gapi
       end

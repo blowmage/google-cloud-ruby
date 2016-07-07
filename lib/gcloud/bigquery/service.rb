@@ -128,13 +128,8 @@ module Gcloud
       ##
       # Updates information in an existing table, replacing fields that
       # are provided in the submitted table resource.
-      def patch_table dataset_id, table_id, options = {}
-        execute(
-          api_method: @bigquery.tables.patch,
-          parameters: { projectId: @project, datasetId: dataset_id,
-                        tableId: table_id },
-          body_object: patch_table_request(options)
-        )
+      def patch_table dataset_id, table_id, patched_table_gapi
+        service.patch_table @project, dataset_id, table_id, patched_table_gapi
       end
 
       ##
@@ -323,15 +318,6 @@ module Gcloud
 
       protected
 
-      def patch_dataset_request options = {}
-        {
-          friendlyName: options[:name],
-          description: options[:description],
-          defaultTableExpirationMs: options[:default_expiration],
-          access: options[:access]
-        }.delete_if { |_, v| v.nil? }
-      end
-
       ##
       # Create the HTTP body for insert table
       def insert_table_request dataset_id, table_id, options = {}
@@ -345,15 +331,6 @@ module Gcloud
         }.delete_if { |_, v| v.nil? }
         hash["view"] = { "query" => options[:query] } if options[:query]
         hash
-      end
-
-      def patch_table_request options = {}
-        body = { friendlyName: options[:name],
-                 description: options[:description],
-                 schema: options[:schema]
-               }.delete_if { |_, v| v.nil? }
-        body["view"] = { "query" => options[:query] } if options[:query]
-        body
       end
 
       # rubocop:disable all
