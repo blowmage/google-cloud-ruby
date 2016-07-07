@@ -172,7 +172,7 @@ module Gcloud
       # The job's status. Returns a hash. The values contained in the hash are
       # also exposed by {#state}, {#error}, and {#errors}.
       def status
-        @gapi.status
+        JSON.parse @gapi.status.to_json
       end
 
       ##
@@ -190,14 +190,17 @@ module Gcloud
       #   }
       #
       def error
-        status.error_result
+        return nil if @gapi.status.nil?
+        return nil if @gapi.status.error_result.nil?
+        JSON.parse @gapi.status.error_result.to_json
       end
 
       ##
       # The errors for the job, if any errors have occurred. Returns an array
       # of hash objects. See {#error}.
       def errors
-        Array status.errors
+        return [] if @gapi.status.nil?
+        Array(@gapi.status.errors).map { |e| JSON.parse e.to_json }
       end
 
       ##

@@ -57,9 +57,9 @@ describe Gcloud::Bigquery::CopyJob, :mock_bigquery do
 
   it "knows its copy config" do
     job.config.must_be_kind_of Hash
-    job.config.copy.source_table.project_id.must_equal "source_project_id"
-    job.config.copy.destination_table.table_id.must_equal "target_table_id"
-    job.config.copy.create_disposition.must_equal "CREATE_IF_NEEDED"
+    job.config["copy"]["sourceTable"]["projectId"].must_equal "source_project_id"
+    job.config["copy"]["destinationTable"]["tableId"].must_equal "target_table_id"
+    job.config["copy"]["createDisposition"].must_equal "CREATE_IF_NEEDED"
   end
 
   def copy_job_gapi

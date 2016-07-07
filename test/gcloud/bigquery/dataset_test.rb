@@ -25,14 +25,6 @@ describe Gcloud::Bigquery::Dataset, :mock_bigquery do
   let(:table_name) { "My Table" }
   let(:table_description) { "This is my table" }
   let(:table_schema) {
-    # {
-    #   fields: [
-    #     { mode: "NULLABLE", name: "name",   type: "STRING",  fields: []},
-    #     { mode: "NULLABLE", name: "age",    type: "INTEGER", fields: []},
-    #     { mode: "NULLABLE", name: "score",  type: "FLOAT",   fields: []},
-    #     { mode: "NULLABLE", name: "active", type: "BOOLEAN", fields: []}
-    #   ]
-    # }
     {
       fields: [
         { mode: "REQUIRED", name: "name", type: "STRING"},

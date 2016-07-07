@@ -53,10 +53,10 @@ describe Gcloud::Bigquery::QueryJob, :mock_bigquery do
   end
 
   it "knows its query config" do
-    job.config.must_be_kind_of Google::Apis::BigqueryV2::JobConfiguration
-    job.config.query.destination_table.table_id.must_equal "target_table_id"
-    job.config.query.create_disposition.must_equal "CREATE_IF_NEEDED"
-    job.config.query.priority.must_equal "BATCH"
+    job.config.must_be_kind_of Hash
+    job.config["query"]["destinationTable"]["tableId"].must_equal "target_table_id"
+    job.config["query"]["createDisposition"].must_equal "CREATE_IF_NEEDED"
+    job.config["query"]["priority"].must_equal "BATCH"
   end
 
   def query_job_gapi

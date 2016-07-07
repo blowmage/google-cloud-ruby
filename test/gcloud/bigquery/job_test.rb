@@ -121,17 +121,17 @@ describe Gcloud::Bigquery::Job, :mock_bigquery do
   end
 
   it "knows its configuration" do
-    job.config.must_be_kind_of Google::Apis::BigqueryV2::JobConfiguration
-    job.config.dry_run.must_equal false
-    job.configuration.must_be_kind_of Google::Apis::BigqueryV2::JobConfiguration
-    job.configuration.dry_run.must_equal false
+    job.config.must_be_kind_of Hash
+    job.config["dryRun"].must_equal false
+    job.configuration.must_be_kind_of Hash
+    job.configuration["dryRun"].must_equal false
   end
 
   it "knows its statistics config" do
-    job.statistics.must_be_kind_of Google::Apis::BigqueryV2::JobStatistics
-    job.statistics.creation_time.wont_be :nil?
-    job.stats.must_be_kind_of Google::Apis::BigqueryV2::JobStatistics
-    job.stats.creation_time.wont_be :nil?
+    job.statistics.must_be_kind_of Hash
+    job.statistics["creationTime"].wont_be :nil?
+    job.stats.must_be_kind_of Hash
+    job.stats["creationTime"].wont_be :nil?
   end
 
   it "knows its error info if it has not failed" do
@@ -143,16 +143,17 @@ describe Gcloud::Bigquery::Job, :mock_bigquery do
   it "knows if it has failed" do
     failed_job.state.must_equal "DONE"
     failed_job.must_be :failed?
-    failed_job.error.must_be_kind_of Google::Apis::BigqueryV2::ErrorProto
-    failed_job.error.reason.must_equal "r34s0n"
-    failed_job.error.location.must_equal "l0c4t10n"
-    failed_job.error.debug_info.must_equal "d3bugInf0"
-    failed_job.error.message.must_equal "m3ss4g3"
+    failed_job.error.must_be_kind_of Hash
+    failed_job.error.wont_be :empty?
+    failed_job.error["reason"].must_equal "r34s0n"
+    failed_job.error["location"].must_equal "l0c4t10n"
+    failed_job.error["debugInfo"].must_equal "d3bugInf0"
+    failed_job.error["message"].must_equal "m3ss4g3"
     failed_job.errors.count.must_equal 1
-    failed_job.errors.first.reason.must_equal "r34s0n"
-    failed_job.errors.first.location.must_equal "l0c4t10n"
-    failed_job.errors.first.debug_info.must_equal "d3bugInf0"
-    failed_job.errors.first.message.must_equal "m3ss4g3"
+    failed_job.errors.first["reason"].must_equal "r34s0n"
+    failed_job.errors.first["location"].must_equal "l0c4t10n"
+    failed_job.errors.first["debugInfo"].must_equal "d3bugInf0"
+    failed_job.errors.first["message"].must_equal "m3ss4g3"
   end
 
   it "can reload itself" do
@@ -210,7 +211,7 @@ describe Gcloud::Bigquery::Job, :mock_bigquery do
                 [project, generic_job_gapi]
 
     new_job = job.rerun!
-    new_job.configuration.dry_run.must_equal job.configuration.dry_run
+    new_job.config["dryRun"].must_equal job.config["dryRun"]
     new_job.job_id.wont_equal job.job_id
     mock.verify
   end

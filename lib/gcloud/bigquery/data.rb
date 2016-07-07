@@ -45,6 +45,12 @@ module Gcloud
       end
 
       ##
+      # The etag.
+      def etag
+        @gapi.etag
+      end
+
+      ##
       # A token used for paging results.
       def token
         @gapi.page_token

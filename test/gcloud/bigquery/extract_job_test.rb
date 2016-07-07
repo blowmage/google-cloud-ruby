@@ -55,10 +55,10 @@ describe Gcloud::Bigquery::ExtractJob, :mock_bigquery do
   end
 
   it "knows its extract config" do
-    job.config.must_be_kind_of  Google::Apis::BigqueryV2::JobConfiguration
-    job.config.extract.source_table.project_id.must_equal "source_project_id"
-    job.config.extract.compression.must_equal "GZIP"
-    job.config.extract.field_delimiter.must_equal ","
+    job.config.must_be_kind_of Hash
+    job.config["extract"]["sourceTable"]["projectId"].must_equal "source_project_id"
+    job.config["extract"]["compression"].must_equal "GZIP"
+    job.config["extract"]["fieldDelimiter"].must_equal ","
   end
 
   it "knows its statistics attributes" do

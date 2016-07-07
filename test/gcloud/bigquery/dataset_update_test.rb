@@ -31,7 +31,7 @@ describe Gcloud::Bigquery::Dataset, :update, :mock_bigquery do
     bigquery.service.mocked_service = mock
     updated_gapi = dataset_gapi.dup
     updated_gapi.friendly_name = new_dataset_name
-    patch_dataset_gapi = patch_dataset_gapi dataset_gapi, friendly_name: new_dataset_name
+    patch_dataset_gapi = Google::Apis::BigqueryV2::Dataset.new friendly_name: new_dataset_name
     mock.expect :patch_dataset, updated_gapi, [project, dataset_id, patch_dataset_gapi]
 
     dataset.name.must_equal dataset_name
@@ -53,7 +53,7 @@ describe Gcloud::Bigquery::Dataset, :update, :mock_bigquery do
     bigquery.service.mocked_service = mock
     updated_gapi = dataset_gapi.dup
     updated_gapi.description = new_description
-    patch_gapi = patch_dataset_gapi dataset_gapi, description: new_description
+    patch_gapi = Google::Apis::BigqueryV2::Dataset.new description: new_description
     mock.expect :patch_dataset, updated_gapi, [project, dataset_id, patch_gapi]
 
     dataset.name.must_equal dataset_name
@@ -75,7 +75,7 @@ describe Gcloud::Bigquery::Dataset, :update, :mock_bigquery do
     bigquery.service.mocked_service = mock
     updated_gapi = dataset_gapi.dup
     updated_gapi.default_table_expiration_ms = new_default_expiration
-    patch_gapi = patch_dataset_gapi dataset_gapi, default_table_expiration_ms: new_default_expiration
+    patch_gapi = Google::Apis::BigqueryV2::Dataset.new default_table_expiration_ms: new_default_expiration
     mock.expect :patch_dataset, updated_gapi, [project, dataset_id, patch_gapi]
 
     dataset.name.must_equal dataset_name
