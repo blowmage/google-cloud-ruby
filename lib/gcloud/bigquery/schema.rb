@@ -43,12 +43,12 @@ module Gcloud
     #
     class Schema
       def fields
-        @fields ||= @gapi.schema.fields.map { |f| Field.from_gapi f }
+        @fields ||= @gapi.fields.map { |f| Field.from_gapi f }
       end
 
       def fields= new_fields
-        @gapi.schema.fields = Array(new_fields).map { |f| f.to_gapi }
-        @fields = @gapi.schema.fields.map { |f| Field.from_gapi f }
+        @gapi.fields = Array(new_fields).map { |f| f.to_gapi }
+        @fields = @gapi.fields.map { |f| Field.from_gapi f }
       end
 
       def empty?
@@ -59,15 +59,14 @@ module Gcloud
       def changed?
         return false if frozen?
         check_for_mutated_schema!
-        @original_json == @gapi.schema.to_json
+        @original_json != @gapi.to_json
       end
 
       # @private
       def freeze
         @gapi = @gapi.dup.freeze
-        @gapi.schema.freeze
-        @gapi.schema.fields.freeze
-        @fields = @gapi.schema.fields.map { |f| Field.from_gapi(f).freeze }
+        @gapi.fields.freeze
+        @fields = @gapi.fields.map { |f| Field.from_gapi(f).freeze }
         @fields.freeze
         super
       end
@@ -76,20 +75,19 @@ module Gcloud
       # @private Make sure any changes are saved.
       def check_for_mutated_schema!
         return if frozen?
+        return if @gapi.frozen?
         if @fields
           gapi_fields = Array(@fields).map { |f| f.to_gapi }
-          @gapi.schema.update! fields: gapi_fields
+          @gapi.update! fields: gapi_fields
         end
       end
 
       # @private
       def self.from_gapi gapi
-        gapi.schema ||= Google::Apis::BigqueryV2::TableSchema.new
-        gapi.schema.fields ||= []
-        original_json = gapi.schema.to_json
+        gapi.fields ||= []
         new.tap do |s|
           s.instance_variable_set :@gapi, gapi
-          s.instance_variable_set :@original_json, original_json
+          s.instance_variable_set :@original_json, gapi.to_json
         end
       end
 
@@ -97,6 +95,12 @@ module Gcloud
       def to_gapi
         check_for_mutated_schema!
         @gapi
+      end
+
+      # @private
+      def == other
+        return false unless other.is_a? Schema
+        to_gapi.to_h == other.to_gapi.to_h
       end
 
       ##
@@ -211,7 +215,8 @@ module Gcloud
       def record name, description: nil, mode: nil
         fail ArgumentError, "nested RECORD type is not permitted" if @nested
         fail ArgumentError, "a block is required" unless block_given?
-        nested_schema = self.class.new.tap do |s|
+        empty_schema = Google::Apis::BigqueryV2::TableSchema.new fields: []
+        nested_schema = self.class.from_gapi(empty_schema).tap do |s|
           s.instance_variable_set :@nested, true
         end
         yield nested_schema
@@ -224,10 +229,9 @@ module Gcloud
       def add_field name, type, nested_fields, description: nil,
                     mode: :nullable
         # Remove any existing field of this name
-        fields.reject! { |f| f.name == name }
-        field = Field.new name, type, description: description,
-                      mode: mode, fields: nested_fields
-        fields << field
+        self.fields.reject! { |f| f.name == name }
+        self.fields << Field.new(name, type, description: description,
+                                 mode: mode, fields: nested_fields)
       end
 
       class Field
@@ -280,7 +284,7 @@ module Gcloud
         end
 
         def fields
-          @fields ||= Array(@gapi.fields).map { |g| Field.from_gapi f }
+          @fields ||= Array(@gapi.fields).map { |f| Field.from_gapi f }
         end
         def fields= new_fields
           @fields = new_fields
@@ -289,6 +293,7 @@ module Gcloud
         ##
         # @private Make sure any fields are saved.
         def check_for_changed_fields!
+          return if frozen?
           fields.each { |f| f.check_for_changed_fields! }
           gapi_fields = Array(fields).map { |f| f.to_gapi }
           gapi_fields = nil if gapi_fields.empty?
@@ -313,6 +318,12 @@ module Gcloud
           # make sure any changes are saved.
           check_for_changed_fields!
           @gapi
+        end
+
+        # @private
+        def == other
+          return false unless other.is_a? Field
+          to_gapi.to_h == other.to_gapi.to_h
         end
 
         protected

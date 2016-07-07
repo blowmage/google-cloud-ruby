@@ -257,7 +257,7 @@ module Gcloud
       #
       def schema
         ensure_full_data!
-        Schema.from_gapi(@gapi).freeze
+        Schema.from_gapi(@gapi.schema).freeze
       end
 
       ##

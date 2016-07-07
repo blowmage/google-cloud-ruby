@@ -330,17 +330,18 @@ module Gcloud
       #
       def schema replace: false
         ensure_full_data!
-        schema_builder = Schema.from_gapi @gapi
+        schema_builder = Schema.from_gapi @gapi.schema
         if block_given?
           if replace
-            # Only replace if we have a block, force changed? to be true
-            @gapi.update! \
-              schema: Google::Apis::BigqueryV2::TableSchema.new(fields: [])
-            schema_builder.instance_variable_set :@fields, []
+            empty_schema = Google::Apis::BigqueryV2::TableSchema.new fields: []
+            schema_builder = Schema.from_gapi empty_schema
           end
           yield schema_builder
           schema_builder.check_for_mutated_schema!
-          patch_gapi! :schema if schema_builder.changed?
+          if schema_builder.changed?
+            @gapi.schema = schema_builder.to_gapi
+            patch_gapi! :schema
+          end
         end
         schema_builder.freeze
       end
