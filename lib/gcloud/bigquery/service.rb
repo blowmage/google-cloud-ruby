@@ -153,13 +153,19 @@ module Gcloud
       end
 
       def insert_tabledata dataset_id, table_id, rows, options = {}
-        execute(
-          api_method: @bigquery.tabledata.insert_all,
-          parameters: { projectId: @project,
-                        datasetId: dataset_id,
-                        tableId: table_id },
-          body_object: insert_tabledata_rows(rows, options)
+        insert_rows = Array(rows).map do |row|
+          Google::Apis::BigqueryV2::InsertAllTableDataRequest::Row.new(
+            insert_id: Digest::MD5.base64digest(row.inspect),
+            json: row # Hash[my_hash.map{|(k,v)| [k.to_s,v]}] for Hash<String,Object>
+          )
+        end
+        insert_req = Google::Apis::BigqueryV2::InsertAllTableDataRequest.new(
+          rows: insert_rows,
+          ignore_unknown_values: options[:ignore_unknown],
+          skip_invalid_rows: options[:skip_invalid],
         )
+
+        service.insert_all_table_data @project, dataset_id, table_id, insert_req
       end
 
       ##
@@ -212,7 +218,7 @@ module Gcloud
         service.insert_job @project, extract_table_config(table, storage_files, options)
       end
 
-      def load_table table, storage_url, options = {}
+      def load_table_gs_url table, storage_url, options = {}
         execute(
           api_method: @bigquery.jobs.insert,
           parameters: { projectId: @project },
@@ -221,7 +227,7 @@ module Gcloud
         )
       end
 
-      def load_multipart table, file, options = {}
+      def load_table_file table, file, options = {}
         media = load_media file
 
         execute(
@@ -232,28 +238,15 @@ module Gcloud
         )
       end
 
-      def load_resumable table, file, chunk_size = nil, options = {}
-        media = load_media file, chunk_size
-
-        result = execute(
-          api_method: @bigquery.jobs.insert,
-          media: media,
-          parameters: { projectId: @project, uploadType: "resumable" },
-          body_object: load_table_config(table, nil, file, options)
-        )
-        upload = result.resumable_upload
-        result = execute upload while upload.resumable?
-        result
-      end
-
-      def default_access_rules
-        [
-          { "role" => "OWNER",  "specialGroup" => "projectOwners" },
-          { "role" => "WRITER", "specialGroup" => "projectWriters" },
-          { "role" => "READER", "specialGroup" => "projectReaders" },
-          { "role" => "OWNER",  "userByEmail"  => credentials.issuer }
-        ]
-      end
+      # TODO: figure out of we need these...
+      # def default_access_rules
+      #   [
+      #     { "role" => "OWNER",  "specialGroup" => "projectOwners" },
+      #     { "role" => "WRITER", "specialGroup" => "projectWriters" },
+      #     { "role" => "READER", "specialGroup" => "projectReaders" },
+      #     { "role" => "OWNER",  "userByEmail"  => credentials.issuer }
+      #   ]
+      # end
 
       ##
       # Extracts at least `tbl` group, and possibly `dts` and `prj` groups,
@@ -310,18 +303,6 @@ module Gcloud
                }.delete_if { |_, v| v.nil? }
         body["view"] = { "query" => options[:query] } if options[:query]
         body
-      end
-
-      def insert_tabledata_rows rows, options = {}
-        {
-          "kind" => "bigquery#tableDataInsertAllRequest",
-          "skipInvalidRows" => options[:skip_invalid],
-          "ignoreUnknownValues" => options[:ignore_unknown],
-          "rows" => rows.map do |row|
-            { "insertId" => Digest::MD5.base64digest(row.inspect),
-              "json" => row }
-          end
-        }.delete_if { |_, v| v.nil? }
       end
 
       # rubocop:disable all
@@ -424,25 +405,26 @@ module Gcloud
       def load_table_config table, urls, file, options = {}
         path = Array(urls).first
         path = Pathname(file).to_path unless file.nil?
+        load_opts = {
+          source_uris: Array(urls),
+          destination_table: table,
+          create_disposition: create_disposition(options[:create]),
+          write_disposition: write_disposition(options[:write]),
+          source_format: source_format(path, options[:format]),
+          projection_fields: projection_fields(options[:projection_fields]),
+          allow_jagged_rows: options[:jagged_rows],
+          allow_quoted_newlines: options[:quoted_newlines],
+          encoding: options[:encoding],
+          field_delimiter: options[:delimiter],
+          ignore_unknown_values: options[:ignore_unknown],
+          max_bad_records: options[:max_bad_records],
+          quote: options[:quote],
+          schema: options[:schema],
+          skip_leading_rows: options[:skip_leading]
+        }.delete_if { |_, v| v.nil? }
         API::Job.new(
           configuration: API::JobConfiguration.new(
-            load: API::JobConfigurationLoad.new(
-              source_uris: Array(urls),
-              destination_table: table,
-              create_disposition: create_disposition(options[:create]),
-              write_disposition: write_disposition(options[:write]),
-              source_format: source_format(path, options[:format]),
-              projection_fields: projection_fields(options[:projection_fields]),
-              allow_jagged_rows: options[:jagged_rows],
-              allow_quoted_newlines: options[:quoted_newlines],
-              encoding: options[:encoding],
-              field_delimiter: options[:delimiter],
-              ignore_unknown_values: options[:ignore_unknown],
-              max_bad_records: options[:max_bad_records],
-              quote: options[:quote],
-              schema: options[:schema],
-              skip_leading_rows: options[:skip_leading]
-            ),
+            load: API::JobConfigurationLoad.new(load_opts),
             dry_run: options[:dryrun]
           )
         )

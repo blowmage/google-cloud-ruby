@@ -741,12 +741,8 @@ module Gcloud
         rows = [rows] if rows.is_a? Hash
         ensure_service!
         options = { skip_invalid: skip_invalid, ignore_unknown: ignore_unknown }
-        resp = service.insert_tabledata dataset_id, table_id, rows, options
-        if resp.success?
-          InsertResponse.from_gapi rows, resp.data
-        else
-          fail ApiError.from_response(resp)
-        end
+        gapi = service.insert_tabledata dataset_id, table_id, rows, options
+        InsertResponse.from_gapi rows, gapi
       end
 
       ##
@@ -817,46 +813,20 @@ module Gcloud
         self
       end
 
-      def load_storage file, options = {}
+      def load_storage url, options = {}
         # Convert to storage URL
-        file = file.to_gs_url if file.respond_to? :to_gs_url
+        url = url.to_gs_url if url.respond_to? :to_gs_url
 
-        gapi = service.load_table table_ref, file, options
+        gapi = service.load_table_gs_url table_ref, url, options
         Job.from_gapi gapi, service
       end
 
       def load_local file, options = {}
-        if resumable_upload? file
-          load_resumable file, options
-        else
-          load_multipart file, options
-        end
-      end
+        # Convert to storage URL
+        file = file.to_gs_url if file.respond_to? :to_gs_url
 
-      def load_resumable file, options = {}
-        chunk_size = Gcloud::Upload.verify_chunk_size options[:chunk_size],
-                                                      file.length
-        resp = service.load_resumable table_ref, file, chunk_size, options
-        if resp.success?
-          Job.from_gapi resp.data, service
-        else
-          fail ApiError.from_response(resp)
-        end
-      end
-
-      def load_multipart file, options = {}
-        resp = service.load_multipart table_ref, file, options
-        if resp.success?
-          Job.from_gapi resp.data, service
-        else
-          fail ApiError.from_response(resp)
-        end
-      end
-
-      ##
-      # @private Determines if a resumable upload should be used.
-      def resumable_upload? file
-        ::File.size?(file).to_i > Upload.resumable_threshold
+        gapi = service.load_table_file table_ref, file, options
+        Job.from_gapi gapi, service
       end
 
       def storage_url? file
