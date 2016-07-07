@@ -19,9 +19,7 @@ describe Gcloud::Bigquery::Project, :mock_bigquery do
   it "creates an empty dataset" do
     mock = Minitest::Mock.new
     created_dataset = create_dataset_gapi "my_dataset"
-    inserted_dataset = Google::Apis::BigqueryV2::Dataset.new(
-      dataset_reference: Google::Apis::BigqueryV2::DatasetReference.new(
-        project_id: project, dataset_id: "my_dataset"))
+    inserted_dataset = Google::Apis::BigqueryV2::Dataset.new
     mock.expect :insert_dataset, created_dataset,
       [project, inserted_dataset]
     bigquery.service.mocked_service = mock
@@ -43,8 +41,6 @@ describe Gcloud::Bigquery::Project, :mock_bigquery do
     mock = Minitest::Mock.new
     created_dataset = create_dataset_gapi id, name, description, default_expiration, location
     inserted_dataset = Google::Apis::BigqueryV2::Dataset.new(
-      dataset_reference: Google::Apis::BigqueryV2::DatasetReference.new(
-        project_id: project, dataset_id: id),
       friendly_name: name,
       description: description,
       default_table_expiration_ms: default_expiration,
@@ -74,8 +70,6 @@ describe Gcloud::Bigquery::Project, :mock_bigquery do
     created_dataset = create_dataset_gapi "my_dataset"
     created_dataset.access = filled_access
     inserted_dataset = Google::Apis::BigqueryV2::Dataset.new(
-      dataset_reference: Google::Apis::BigqueryV2::DatasetReference.new(
-        project_id: project, dataset_id: "my_dataset"),
         access: filled_access)
     mock.expect :insert_dataset, created_dataset,
       [project, inserted_dataset]
@@ -108,8 +102,6 @@ describe Gcloud::Bigquery::Project, :mock_bigquery do
     created_dataset = create_dataset_gapi id, name, description, default_expiration, location
     created_dataset.access = filled_access
     inserted_dataset = Google::Apis::BigqueryV2::Dataset.new(
-      dataset_reference: Google::Apis::BigqueryV2::DatasetReference.new(
-        project_id: project, dataset_id: id),
       friendly_name: name,
       description: description,
       default_table_expiration_ms: default_expiration,
@@ -153,8 +145,6 @@ describe Gcloud::Bigquery::Project, :mock_bigquery do
     created_dataset = create_dataset_gapi id, name, description, default_expiration, location
     created_dataset.access = filled_access
     inserted_dataset = Google::Apis::BigqueryV2::Dataset.new(
-      dataset_reference: Google::Apis::BigqueryV2::DatasetReference.new(
-        project_id: project, dataset_id: id),
       friendly_name: name,
       description: description,
       default_table_expiration_ms: default_expiration,

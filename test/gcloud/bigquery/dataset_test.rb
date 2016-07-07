@@ -104,8 +104,7 @@ describe Gcloud::Bigquery::Dataset, :mock_bigquery do
 
   it "creates an empty table" do
     mock = Minitest::Mock.new
-    insert_table = Google::Apis::BigqueryV2::Table.new(
-      table_reference: Google::Apis::BigqueryV2::TableReference.new(project_id: project, dataset_id: dataset_id, table_id: table_id))
+    insert_table = Google::Apis::BigqueryV2::Table.new
     return_table = create_table_gapi table_id
     mock.expect :insert_table, return_table,
       [project, dataset_id, insert_table]
@@ -124,7 +123,6 @@ describe Gcloud::Bigquery::Dataset, :mock_bigquery do
   it "creates a table with a name, description options" do
     mock = Minitest::Mock.new
     insert_table = Google::Apis::BigqueryV2::Table.new(
-      table_reference: Google::Apis::BigqueryV2::TableReference.new(project_id: project, dataset_id: dataset_id, table_id: table_id),
       friendly_name: table_name,
       description: table_description)
     return_table = create_table_gapi table_id, table_name, table_description
@@ -152,7 +150,6 @@ describe Gcloud::Bigquery::Dataset, :mock_bigquery do
   it "creates a table with a name, description in a block" do
     mock = Minitest::Mock.new
     insert_table = Google::Apis::BigqueryV2::Table.new(
-      table_reference: Google::Apis::BigqueryV2::TableReference.new(project_id: project, dataset_id: dataset_id, table_id: table_id),
       friendly_name: table_name,
       description: table_description)
     return_table = create_table_gapi table_id, table_name, table_description
@@ -181,7 +178,6 @@ describe Gcloud::Bigquery::Dataset, :mock_bigquery do
   it "creates a table with a fields option" do
     mock = Minitest::Mock.new
     insert_table = Google::Apis::BigqueryV2::Table.new(
-      table_reference: Google::Apis::BigqueryV2::TableReference.new(project_id: project, dataset_id: dataset_id, table_id: table_id),
       friendly_name: table_name,
       description: table_description,
       schema: table_schema_gapi)
@@ -217,7 +213,6 @@ describe Gcloud::Bigquery::Dataset, :mock_bigquery do
   it "creates a table with a schema inline" do
     mock = Minitest::Mock.new
     insert_table = Google::Apis::BigqueryV2::Table.new(
-      table_reference: Google::Apis::BigqueryV2::TableReference.new(project_id: project, dataset_id: dataset_id, table_id: table_id),
       friendly_name: table_name,
       description: table_description,
       schema: table_schema_gapi)
@@ -251,7 +246,6 @@ describe Gcloud::Bigquery::Dataset, :mock_bigquery do
   it "creates a table with a schema in a block" do
     mock = Minitest::Mock.new
     insert_table = Google::Apis::BigqueryV2::Table.new(
-      table_reference: Google::Apis::BigqueryV2::TableReference.new(project_id: project, dataset_id: dataset_id, table_id: table_id),
       friendly_name: table_name,
       description: table_description,
       schema: table_schema_gapi)
@@ -287,7 +281,6 @@ describe Gcloud::Bigquery::Dataset, :mock_bigquery do
   it "can create a empty view" do
     mock = Minitest::Mock.new
     insert_view = Google::Apis::BigqueryV2::Table.new(
-      table_reference: Google::Apis::BigqueryV2::TableReference.new(project_id: project, dataset_id: dataset_id, table_id: view_id),
       query: query)
     return_view = create_view_gapi view_id, query
     mock.expect :insert_table, return_view,
@@ -308,7 +301,6 @@ describe Gcloud::Bigquery::Dataset, :mock_bigquery do
   it "can create a view with a name and description" do
     mock = Minitest::Mock.new
     insert_view = Google::Apis::BigqueryV2::Table.new(
-      table_reference: Google::Apis::BigqueryV2::TableReference.new(project_id: project, dataset_id: dataset_id, table_id: view_id),
       friendly_name: view_name,
       description: view_description,
       query: query)

@@ -71,10 +71,6 @@ module Gcloud
       ##
       # Creates a new empty dataset.
       def insert_dataset dataset_id, new_dataset_gapi
-        new_dataset_gapi.dataset_reference ||= \
-          Google::Apis::BigqueryV2::DatasetReference.new(
-            project_id: @project, dataset_id: dataset_id)
-
         service.insert_dataset @project, new_dataset_gapi
       end
 
@@ -82,10 +78,6 @@ module Gcloud
       # Updates information in an existing dataset, only replacing
       # fields that are provided in the submitted dataset resource.
       def patch_dataset dataset_id, patched_dataset_gapi
-        patched_dataset_gapi.dataset_reference ||= \
-          Google::Apis::BigqueryV2::DatasetReference.new(
-            project_id: @project, dataset_id: dataset_id)
-
         service.patch_dataset @project, dataset_id, patched_dataset_gapi
       end
 

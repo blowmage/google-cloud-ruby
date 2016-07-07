@@ -886,13 +886,11 @@ module Gcloud
         def schema replace: false
           # Same as Table#schema, but not frozen
           # TODO: make sure to call ensure_full_data! on Dataset#update
-          @schema ||= Schema.from_gapi @gapi
+          @schema ||= Schema.from_gapi @gapi.schema
           if block_given?
             if replace
-              # Only replace if we have a block, force changed? to be true
-              @gapi.update! \
-                schema: Google::Apis::BigqueryV2::TableSchema.new(fields: [])
-              @schema.instance_variable_set :@fields, []
+              empty_schema = Google::Apis::BigqueryV2::TableSchema.new fields: []
+              @schema = Schema.from_gapi empty_schema
             end
             yield @schema
             check_for_mutated_schema!
@@ -907,6 +905,7 @@ module Gcloud
           return if @schema.nil?
           @schema.check_for_mutated_schema!
           if @schema.changed?
+            @gapi.schema = @schema.to_gapi
             patch_gapi! :schema
           end
         end

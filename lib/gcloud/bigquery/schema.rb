@@ -84,6 +84,7 @@ module Gcloud
 
       # @private
       def self.from_gapi gapi
+        gapi ||= Google::Apis::BigqueryV2::TableSchema.new fields: []
         gapi.fields ||= []
         new.tap do |s|
           s.instance_variable_set :@gapi, gapi

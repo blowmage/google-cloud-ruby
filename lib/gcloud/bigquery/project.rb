@@ -314,9 +314,7 @@ module Gcloud
                          expiration: nil, location: nil
         ensure_service!
 
-        new_ds = Google::Apis::BigqueryV2::Dataset.new(
-          dataset_reference: Google::Apis::BigqueryV2::DatasetReference.new(
-            project_id: project_id, dataset_id: dataset_id))
+        new_ds = Google::Apis::BigqueryV2::Dataset.new
 
         # Can set location only on creation, no Dataset#location method
         new_ds.update! location: location unless location.nil?
