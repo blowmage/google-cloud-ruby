@@ -152,12 +152,8 @@ module Gcloud
         options = { priority: priority, cache: cache, table: table,
                     create: create, write: write, large_results: large_results,
                     flatten: flatten, dataset: dataset }
-        resp = service.query_job query, options
-        if resp.success?
-          Job.from_gapi resp.data, service
-        else
-          fail ApiError.from_response(resp)
-        end
+        gapi = service.query_job query, options
+        Job.from_gapi gapi, service
       end
 
       ##

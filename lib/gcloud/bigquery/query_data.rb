@@ -51,10 +51,7 @@ module Gcloud
       ##
       # The schema of the data.
       def schema
-        s = @gapi.schema
-        s = s.to_hash if s.respond_to? :to_hash
-        s = {} if s.nil?
-        s
+        Schema.from_gapi(@gapi.schema).freeze
       end
 
       ##

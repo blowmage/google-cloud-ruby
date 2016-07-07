@@ -457,6 +457,28 @@ class MockBigquery < Minitest::Spec
     }
   end
 
+  def query_job_gapi query
+    Google::Apis::BigqueryV2::Job.from_json query_job_json(query)
+  end
+
+  def query_job_json query
+    {
+      "configuration" => {
+        "query" => {
+          "query" => query,
+          "defaultDataset" => nil,
+          "destinationTable" => nil,
+          "createDisposition" => nil,
+          "writeDisposition" => nil,
+          "priority" => "INTERACTIVE",
+          "allowLargeResults" => nil,
+          "useQueryCache" => true,
+          "flattenResults" => nil
+        }
+      }
+    }.to_json
+  end
+
   def query_request_gapi
     Google::Apis::BigqueryV2::QueryRequest.new(
       default_dataset: Google::Apis::BigqueryV2::DatasetReference.new(

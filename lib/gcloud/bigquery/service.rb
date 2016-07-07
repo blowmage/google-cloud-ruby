@@ -180,7 +180,9 @@ module Gcloud
       end
 
       def query_job query, options = {}
-        service.insert_job @project, query_table_config(query, options)
+        config = query_table_config(query, options)
+        puts config.inspect + " <<<<< actual \n\n"
+        service.insert_job @project, config
       end
 
       def query query, options = {}

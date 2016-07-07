@@ -26,36 +26,15 @@ describe Gcloud::Bigquery::Dataset, :query_job, :mock_bigquery do
     bigquery.service.mocked_service = mock
 
     job_gapi = query_job_gapi(query)
+    job_gapi.configuration.query.default_dataset = Google::Apis::BigqueryV2::DatasetReference.new(
+      project_id: project,
+      dataset_id: dataset_id
+    )
     mock.expect :insert_job, job_gapi, [project, job_gapi]
 
     job = dataset.query_job query
     mock.verify
 
     job.must_be_kind_of Gcloud::Bigquery::QueryJob
-  end
-
-  def query_job_gapi query
-    Google::Apis::BigqueryV2::Job.from_json query_job_json(query)
-  end
-
-  def query_job_json query
-    {
-      "configuration" => {
-        "query" => {
-          "query" => query,
-          "defaultDataset" => {
-            "datasetId" => dataset_id,
-            "projectId" => project
-          },
-          "destinationTable" => nil,
-          "createDisposition" => nil,
-          "writeDisposition" => nil,
-          "priority" => "INTERACTIVE",
-          "allowLargeResults" => nil,
-          "useQueryCache" => true,
-          "flattenResults" => nil
-        }
-      }
-    }.to_json
   end
 end

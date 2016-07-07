@@ -32,11 +32,6 @@ describe Gcloud::Bigquery::LoadJob, :mock_bigquery do
   end
 
   it "knows its destination table" do
-    # mock_connection.get "/bigquery/v2/projects/target_project_id/datasets/target_dataset_id/tables/target_table_id" do |env|
-    #   [200, {"Content-Type"=>"application/json"},
-    #    destination_table_json]
-    # end
-
     mock = Minitest::Mock.new
     mock.expect :get_table, destination_table_gapi,
       ["target_project_id", "target_dataset_id", "target_table_id"]
