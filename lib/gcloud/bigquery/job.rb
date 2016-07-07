@@ -154,7 +154,7 @@ module Gcloud
       # @see https://cloud.google.com/bigquery/docs/reference/v2/jobs Jobs API
       #   reference
       def configuration
-        @gapi.configuration
+        JSON.parse @gapi.configuration.to_json
       end
       alias_method :config, :configuration
 
@@ -164,7 +164,7 @@ module Gcloud
       # @see https://cloud.google.com/bigquery/docs/reference/v2/jobs Jobs API
       #   reference
       def statistics
-        @gapi.statistics
+        JSON.parse @gapi.statistics.to_json
       end
       alias_method :stats, :statistics
 
