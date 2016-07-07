@@ -13,6 +13,8 @@
 # limitations under the License.
 
 
+require "json"
+
 module Gcloud
   module Bigquery
     ##
@@ -39,7 +41,7 @@ module Gcloud
       def insert_errors
         Array(@gapi.insert_errors).map do |ie|
           row = @rows[ie.index]
-          errors = ie.errors.map(&:to_h)
+          errors = ie.errors.map { |e| JSON.parse e.to_json }
           InsertError.new row, errors
         end
       end

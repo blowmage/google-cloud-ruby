@@ -16,6 +16,7 @@
 require "gcloud/bigquery/query_data"
 require "gcloud/bigquery/job/list"
 require "gcloud/bigquery/errors"
+require "json"
 
 module Gcloud
   module Bigquery
