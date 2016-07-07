@@ -630,12 +630,8 @@ module Gcloud
         options[:dataset] ||= dataset_id
         options[:project] ||= project_id
         ensure_service!
-        resp = service.query query, options
-        if resp.success?
-          QueryData.from_gapi resp.data, service
-        else
-          fail ApiError.from_response(resp)
-        end
+        gapi = service.query query, options
+        QueryData.from_gapi gapi, service
       end
 
       ##

@@ -146,17 +146,10 @@ module Gcloud
       ##
       # Retrieves data from the table.
       def list_tabledata dataset_id, table_id, options = {}
-        params = { projectId: @project,
-                   datasetId: dataset_id, tableId: table_id,
-                   pageToken: options.delete(:token),
-                   maxResults: options.delete(:max),
-                   startIndex: options.delete(:start)
-                 }.delete_if { |_, v| v.nil? }
-
-        execute(
-          api_method: @bigquery.tabledata.list,
-          parameters: params
-        )
+        service.list_table_data @project, dataset_id, table_id,
+                                max_results: options.delete(:max),
+                                page_token: options.delete(:token),
+                                start_index: options.delete(:start)
       end
 
       def insert_tabledata dataset_id, table_id, rows, options = {}

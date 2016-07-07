@@ -354,16 +354,12 @@ module Gcloud
       #
       # @!group Data
       #
-      def data max: nil, timeout: nil, cache: nil, dryrun: nil
-        sql = "SELECT * FROM #{@gapi['id']}"
+      def data max: nil, timeout: 10000, cache: true, dryrun: nil
+        sql = "SELECT * FROM #{@gapi.id}"
         ensure_service!
         options = { max: max, timeout: timeout, cache: cache, dryrun: dryrun }
-        resp = service.query sql, options
-        if resp.success?
-          QueryData.from_gapi resp.data, service
-        else
-          fail ApiError.from_response(resp)
-        end
+        gapi = service.query sql, options
+        QueryData.from_gapi gapi, service
       end
 
       ##

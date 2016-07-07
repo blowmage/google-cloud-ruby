@@ -226,12 +226,8 @@ module Gcloud
         ensure_service!
         options = { max: max, timeout: timeout, dryrun: dryrun, cache: cache,
                     dataset: dataset, project: project }
-        resp = service.query query, options
-        if resp.success?
-          QueryData.from_gapi resp.data, service
-        else
-          fail ApiError.from_response(resp)
-        end
+        gapi = service.query query, options
+        QueryData.from_gapi gapi, service
       end
 
       ##

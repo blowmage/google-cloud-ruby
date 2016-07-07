@@ -461,7 +461,24 @@ class MockBigquery < Minitest::Spec
     }
   end
 
-  def query_data_hash
+  def query_request_gapi
+    Google::Apis::BigqueryV2::QueryRequest.new(
+      default_dataset: Google::Apis::BigqueryV2::DatasetReference.new(
+        dataset_id: "my_dataset", project_id: "test-project"
+      ),
+      dry_run: nil,
+      max_results: nil,
+      query: "SELECT name, age, score, active FROM [some_project:some_dataset.users]",
+      timeout_ms: 10000,
+      use_query_cache: true
+    )
+  end
+
+  def query_data_gapi token: "token1234567890"
+    Google::Apis::BigqueryV2::QueryResponse.from_json query_data_hash(token: token).to_json
+  end
+
+  def query_data_hash token: "token1234567890"
     {
       "kind" => "bigquery#getQueryResultsResponse",
       "etag" => "etag1234567890",
@@ -543,7 +560,7 @@ class MockBigquery < Minitest::Spec
           ]
         }
       ],
-      "pageToken" => "token1234567890",
+      "pageToken" => token,
       "totalRows" => 3,
       "totalBytesProcessed" => 456789,
       "jobComplete" => true,

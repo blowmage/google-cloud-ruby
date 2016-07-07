@@ -199,12 +199,6 @@ describe Gcloud::Bigquery::Job, :mock_bigquery do
   end
 
   it "can re-run itself" do
-    # mock_connection.post "/bigquery/v2/projects/#{project}/jobs" do |env|
-    #   [200, {"Content-Type"=>"application/json"},
-    #    random_job_hash(job_id + "-rerun").to_json]
-    # end
-
-
     mock = Minitest::Mock.new
     bigquery.service.mocked_service = mock
 

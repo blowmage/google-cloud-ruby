@@ -408,12 +408,8 @@ module Gcloud
       def data token: nil, max: nil, start: nil
         ensure_service!
         options = { token: token, max: max, start: start }
-        resp = service.list_tabledata dataset_id, table_id, options
-        if resp.success?
-          Data.from_response resp, self
-        else
-          fail ApiError.from_response(resp)
-        end
+        gapi = service.list_tabledata dataset_id, table_id, options
+        Data.from_gapi gapi, self
       end
 
       ##
