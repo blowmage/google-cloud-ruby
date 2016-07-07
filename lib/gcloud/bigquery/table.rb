@@ -817,7 +817,7 @@ module Gcloud
         # Convert to storage URL
         url = url.to_gs_url if url.respond_to? :to_gs_url
 
-        gapi = service.load_table_gs_url table_ref, url, options
+        gapi = service.load_table_gs_url dataset_id, table_id, url, options
         Job.from_gapi gapi, service
       end
 
@@ -825,7 +825,7 @@ module Gcloud
         # Convert to storage URL
         file = file.to_gs_url if file.respond_to? :to_gs_url
 
-        gapi = service.load_table_file table_ref, file, options
+        gapi = service.load_table_file dataset_id, table_id, file, options
         Job.from_gapi gapi, service
       end
 

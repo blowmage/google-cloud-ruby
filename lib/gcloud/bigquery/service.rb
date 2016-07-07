@@ -18,6 +18,7 @@ require "gcloud/errors"
 require "google/apis/bigquery_v2"
 require "pathname"
 require "digest/md5"
+require "mime/types"
 
 module Gcloud
   module Bigquery
@@ -218,24 +219,74 @@ module Gcloud
         service.insert_job @project, extract_table_config(table, storage_files, options)
       end
 
-      def load_table_gs_url table, storage_url, options = {}
-        execute(
-          api_method: @bigquery.jobs.insert,
-          parameters: { projectId: @project },
-          body_object: load_table_config(table, storage_url,
-                                         Array(storage_url).first, options)
+      def load_table_gs_url dataset_id, table_id, storage_url, options = {}
+        #insert_job(project_id, job_object = nil, fields: nil, quota_user: nil, user_ip: nil, upload_source: nil, content_type: nil, options: nil) {|result, err| ... } ⇒ Google::Apis::BigqueryV2::Job
+        load_opts = {
+          destination_table: Google::Apis::BigqueryV2::TableReference.new(
+            project_id: @project, dataset_id: dataset_id, table_id: table_id),
+          source_uris: Array(storage_url),
+          create_disposition: create_disposition(options[:create]),
+          write_disposition: write_disposition(options[:write]),
+          source_format: source_format(storage_url, options[:format]),
+          projection_fields: projection_fields(options[:projection_fields]),
+          allow_jagged_rows: options[:jagged_rows],
+          allow_quoted_newlines: options[:quoted_newlines],
+          encoding: options[:encoding],
+          field_delimiter: options[:delimiter],
+          ignore_unknown_values: options[:ignore_unknown],
+          max_bad_records: options[:max_bad_records],
+          quote: options[:quote],
+          schema: options[:schema],
+          skip_leading_rows: options[:skip_leading]
+        }.delete_if { |_, v| v.nil? }
+        insert_job = API::Job.new(
+          configuration: API::JobConfiguration.new(
+            load: API::JobConfigurationLoad.new(load_opts),
+            dry_run: options[:dryrun]
+          )
         )
+
+        service.insert_job @project, insert_job
       end
 
-      def load_table_file table, file, options = {}
-        media = load_media file
+      def load_table_file dataset_id, table_id, file, options = {}
+        #insert_job(project_id, job_object = nil, fields: nil, quota_user: nil, user_ip: nil, upload_source: nil, content_type: nil, options: nil) {|result, err| ... } ⇒ Google::Apis::BigqueryV2::Job
 
-        execute(
-          api_method: @bigquery.jobs.insert,
-          media: media,
-          parameters: { projectId: @project, uploadType: "multipart" },
-          body_object: load_table_config(table, nil, file, options)
+        path = Pathname(file).to_path
+        load_opts = {
+          destination_table: Google::Apis::BigqueryV2::TableReference.new(
+            project_id: @project, dataset_id: dataset_id, table_id: table_id),
+          create_disposition: create_disposition(options[:create]),
+          write_disposition: write_disposition(options[:write]),
+          source_format: source_format(path, options[:format]),
+          projection_fields: projection_fields(options[:projection_fields]),
+          allow_jagged_rows: options[:jagged_rows],
+          allow_quoted_newlines: options[:quoted_newlines],
+          encoding: options[:encoding],
+          field_delimiter: options[:delimiter],
+          ignore_unknown_values: options[:ignore_unknown],
+          max_bad_records: options[:max_bad_records],
+          quote: options[:quote],
+          schema: options[:schema],
+          skip_leading_rows: options[:skip_leading]
+        }.delete_if { |_, v| v.nil? }
+        insert_job = API::Job.new(
+          configuration: API::JobConfiguration.new(
+            load: API::JobConfigurationLoad.new(load_opts),
+            dry_run: options[:dryrun]
+          )
         )
+
+        service.insert_job \
+          @project, insert_job, upload_source: file,
+                                content_type: mime_type_for(file)
+
+        # execute(
+        #   api_method: @bigquery.jobs.insert,
+        #   media: media,
+        #   parameters: { projectId: @project, uploadType: "multipart" },
+        #   body_object: load_table_config(table, nil, file, options)
+        # )
       end
 
       # TODO: figure out of we need these...
@@ -402,7 +453,7 @@ module Gcloud
         )
       end
 
-      def load_table_config table, urls, file, options = {}
+      def load_table_job_gapi table, urls, file, options = {}
         path = Array(urls).first
         path = Pathname(file).to_path unless file.nil?
         load_opts = {
@@ -475,6 +526,14 @@ module Gcloud
 
       def projection_fields array_or_str
         Array(array_or_str) unless array_or_str.nil?
+      end
+
+      def mime_type_for file
+        mime_type = MIME::Types.of(Pathname(file).to_path).first.to_s
+        return nil if mime_type.empty?
+        mime_type
+      rescue
+        nil
       end
 
       # rubocop:enable all
