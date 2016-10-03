@@ -219,8 +219,8 @@ namespace :jsondoc do
     if ENV["GH_OAUTH_TOKEN"]
       git_repo = "https://#{ENV["GH_OAUTH_TOKEN"]}@github.com/#{ENV["GH_OWNER"]}/#{ENV["GH_PROJECT_NAME"]}"
     end
-    puts "git clone --quiet --branch=gh-pages --single-branch #{git_repo} #{gh_pages} > /dev/null"
-    puts `git clone --quiet --branch=gh-pages --single-branch #{git_repo} #{gh_pages} > /dev/null`
+    puts "git clone --quiet --branch=gh-pages --single-branch --depth 1 #{git_repo} #{gh_pages} > /dev/null"
+    puts `git clone --quiet --branch=gh-pages --single-branch --depth 1 #{git_repo} #{gh_pages} > /dev/null`
   end
 
   desc "Copies all gems jsondoc to gh-pages repo in temp dir."
@@ -340,32 +340,30 @@ namespace :jsondoc do
     tag = args[:tag]
     fail "Missing required parameter 'tag'." if tag.nil?
 
-    fail "'tag' must be in the format <gem>/<version>" unless tag.include?("/")
-    gem_name, gem_version =  tag.split("/")
-
+    m = tag.match /(?<package>\S*)\/v(?<version>\S*)/
+    fail "'tag' must be in the format <gem>/<version>" unless m
+    gem_package, gem_version = m[:package], m[:version]
 
     # Verify the tag exists
     tag_check = `git show-ref --tags | grep #{tag}`.chomp
-    if tag_check.empty?
-      fail "Cannot find the tag '#{tag}'."
-    end
+    fail "Cannot find the tag '#{tag}'." if tag_check.empty?
 
     git_repo = "git@github.com:GoogleCloudPlatform/google-cloud-ruby.git"
     if ENV["GH_OAUTH_TOKEN"]
       git_repo = "https://#{ENV["GH_OAUTH_TOKEN"]}@github.com/#{ENV["GH_OWNER"]}/#{ENV["GH_PROJECT_NAME"]}"
     end
 
-    tag_repo  =  Pathname.new(Dir.home) + "tmp/#{tag}-repo"
+    tag_repo = Pathname.new(Dir.home) + "tmp/#{tag}-repo"
     FileUtils.remove_dir tag_repo if Dir.exists? tag_repo
     FileUtils.mkdir_p tag_repo
 
     header "Cloning tag #{tag} to #{tag_repo}"
 
     # checkout the tag repo
-    puts "git clone --quiet --branch=#{tag} --single-branch #{git_repo} #{tag_repo} > /dev/null"
-    puts `git clone --quiet --branch=#{tag} --single-branch #{git_repo} #{tag_repo} > /dev/null`
+    puts "git clone --quiet --branch=#{tag} --single-branch --depth 1 #{git_repo} #{tag_repo} > /dev/null"
+    puts `git clone --quiet --branch=#{tag} --single-branch --depth 1 #{git_repo} #{tag_repo} > /dev/null`
     # build the docs in the gem dir in the tag repo
-    Dir.chdir tag_repo + gem_name do
+    Dir.chdir tag_repo + gem_package do
       Bundler.with_clean_env do
         # create the docs
         puts "bundle install --path .bundle"
@@ -375,10 +373,46 @@ namespace :jsondoc do
       end
     end
 
+    git_repo = "git@github.com:GoogleCloudPlatform/google-cloud-ruby.git"
+    if ENV["GH_OAUTH_TOKEN"]
+      git_repo = "https://#{ENV["GH_OAUTH_TOKEN"]}@github.com/#{ENV["GH_OWNER"]}/#{ENV["GH_PROJECT_NAME"]}"
+    end
+
+    # checkout the gh-pages repo
+    gh_pages = Pathname.new(Dir.home) + "tmp/#{tag}-gh-pages"
+    FileUtils.remove_dir gh_pages if Dir.exists? gh_pages
+    FileUtils.mkdir_p gh_pages
+
+    puts "git clone --quiet --branch=gh-pages --single-branch --depth 1 #{git_repo} #{gh_pages} > /dev/null"
+    puts `git clone --quiet --branch=gh-pages --single-branch --depth 1 #{git_repo} #{gh_pages} > /dev/null`
+
+    # copy the tag documentation to gh-pages
+    rm_rf gh_pages + "json/#{gem_package}/v#{gem_version}", verbose: true
+    mkdir_p gh_pages + "json/#{gem_package}/v#{gem_version}"
+    cp_r tag_repo + gem_package + "/json",
+         gh_pages + "json/#{gem_package}/v#{gem_version}",
+         verbose: true
+
+   # Change to gh-pages
+   puts "cd #{gh_pages}"
+   Dir.chdir gh_pages do
+     # commit changes
+     puts `git add -A .`
+     if ENV["GH_OAUTH_TOKEN"]
+       puts `git config --global user.email "travis@travis-ci.org"`
+       puts `git config --global user.name "travis-ci"`
+       puts `git commit -m "Update documentation for #{tag}"`
+       puts `git push -q #{git_repo} gh-pages:gh-pages`
+     else
+       puts `git commit -m "Update documentation for #{tag}"`
+       puts `git push -q origin gh-pages`
+     end
+   end
+
     # TODO
-    # 1. copy the jsondoc from tag repo gem dir (above) to gh-pages dir (correct version dir) created in init
-    # 2. rebuild umbrella latest version with jsondoc from tag repo gem dir
-    # 3. publish
+    # - [x] copy the jsondoc from tag repo gem dir (above) to gh-pages dir (correct version dir) created in init
+    # - [ ] rebuild umbrella latest version with jsondoc from tag repo gem dir
+    # - [x] publish
 
   end
 end
