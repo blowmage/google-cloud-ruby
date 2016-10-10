@@ -96,14 +96,13 @@ module Google
                          max: nil
 
           project_ids = Array(projects || @project)
-          options = { page_token: token }.delete_if { |_, v| v.nil? }
-
+          call_options = Google::Gax::CallOptions.new(page_token: token) if token
           execute do
             paged_enum = logging.list_log_entries project_ids,
                                                   filter: filter,
                                                   order_by: order,
                                                   page_size: max,
-                                                  options: options
+                                                  options: call_options
             paged_enum.page.response
           end
         end
@@ -114,12 +113,13 @@ module Google
             entry.log_name = log_path(entry.log_name)
           end
           resource = resource.to_grpc if resource
-          labels = Hash[labels.map { |k, v| [String(k), String(v)] }] if labels
+          labels_map = Google::Protobuf::Map.new(:string, :string)
+          labels.each { |k, v| labels_map[String(k)] = String(v) } if labels
 
           execute do
             logging.write_log_entries entries,
                                       log_name: log_path(log_name),
-                                      resource: resource, labels: labels
+                                      resource: resource, labels: labels_map
           end
         end
 
