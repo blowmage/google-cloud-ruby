@@ -494,6 +494,20 @@ module Google
         end
 
         ##
+        # @private
+        # Ensures that the session is exists and is valid. If not, create a new
+        # session and use that.
+        def ensure_exists!
+          reload!
+          self
+        rescue Google::Cloud::NotFoundError
+          @grpc = service.create_session \
+            Admin::Database::V1::DatabaseAdminClient.database_path(
+              project_id, instance_id, database_id)
+          self
+        end
+
+        ##
         # @private Creates a new Session instance from a
         # Google::Spanner::V1::Session.
         def self.from_grpc grpc, service
