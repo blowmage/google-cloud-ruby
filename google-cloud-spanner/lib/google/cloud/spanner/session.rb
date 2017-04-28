@@ -214,13 +214,16 @@ module Google
         #
         def execute sql, params: nil, transaction: nil, streaming: true
           ensure_service!
+          results = nil
           if streaming
-            Results.execute service, path, sql,
-                            params: params, transaction: transaction
+            results = Results.execute \
+              service, path, sql, params: params, transaction: transaction
           else
-            Results.from_grpc service.execute_sql \
+            results = Results.from_grpc service.execute_sql \
               path, sql, params: params, transaction: transaction
           end
+          @last_updated_at = Time.now
+          results
         end
         alias_method :query, :execute
 
@@ -276,14 +279,18 @@ module Google
         def read table, columns, id: nil, limit: nil, transaction: nil,
                  streaming: true
           ensure_service!
+          results = nil
           if streaming
-            Results.read service, path, table, columns,
-                         id: id, limit: limit, transaction: transaction
+            results = Results.read \
+              service, path, table, columns, id: id, limit: limit,
+                                             transaction: transaction
           else
-            Results.from_grpc service.read_table \
+            results = Results.from_grpc service.read_table \
               path, table, columns, id: id, limit: limit,
                                     transaction: transaction
           end
+          @last_updated_at = Time.now
+          results
         end
 
         # Creates changes to be applied to rows in the database.
@@ -307,6 +314,8 @@ module Google
           commit = Commit.new
           yield commit
           service.commit path, commit.mutations, transaction_id: transaction_id
+          @last_updated_at = Time.now
+          nil
         end
 
         ##
@@ -347,6 +356,8 @@ module Google
           commit = Commit.new
           commit.upsert table, rows
           service.commit path, commit.mutations, transaction_id: transaction_id
+          @last_updated_at = Time.now
+          nil
         end
         alias_method :save, :upsert
 
@@ -387,6 +398,8 @@ module Google
           commit = Commit.new
           commit.insert table, rows
           service.commit path, commit.mutations, transaction_id: transaction_id
+          @last_updated_at = Time.now
+          nil
         end
 
         ##
@@ -426,6 +439,8 @@ module Google
           commit = Commit.new
           commit.update table, rows
           service.commit path, commit.mutations, transaction_id: transaction_id
+          @last_updated_at = Time.now
+          nil
         end
 
         ##
@@ -467,6 +482,8 @@ module Google
           commit = Commit.new
           commit.replace table, rows
           service.commit path, commit.mutations, transaction_id: transaction_id
+          @last_updated_at = Time.now
+          nil
         end
 
         ##
@@ -488,9 +505,25 @@ module Google
         #   db.delete "users", [1, 2, 3]
         #
         def delete table, *id, transaction_id: nil
+          ensure_service!
           commit = Commit.new
           commit.delete table, id
           service.commit path, commit.mutations, transaction_id: transaction_id
+          @last_updated_at = Time.now
+          nil
+        end
+
+        ##
+        # @private
+        # Keeps the session alive.
+        # If the session hasn't been used recently, it will call execute.
+        def keepalive! since: 3000
+          ensure_service!
+          if @last_updated_at.nil? || (Time.now - @last_updated_at) > since
+            execute "SELECT 1"
+            return true
+          end
+          false
         end
 
         ##
@@ -499,12 +532,21 @@ module Google
         # session and use that.
         def ensure_exists!
           reload!
-          self
+          return self
         rescue Google::Cloud::NotFoundError
           @grpc = service.create_session \
             Admin::Database::V1::DatabaseAdminClient.database_path(
               project_id, instance_id, database_id)
-          self
+          return self
+        end
+
+        ##
+        # @private
+        # Ensures that the session is exists and is valid. If not, create a new
+        # session and use that.
+        def ensure_valid! force: nil, since: 3000
+          ensure_exists! if force
+          keepalive! since: since
         end
 
         ##

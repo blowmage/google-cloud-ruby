@@ -27,10 +27,11 @@ module Google
       class Pool
         attr_accessor :min, :max, :pool, :queue
 
-        def initialize client, min: 2, max: 10
+        def initialize client, min: 2, max: 10, keepalive: 1500
           @client = client
           @min = min
           @max = max
+          @keepalive = keepalive
 
           # initialize pool and availability queue
           @pool = []
@@ -49,7 +50,9 @@ module Google
             fail "No available sessions" if pool.size >= @max
             new_session!
           end
-          queue.shift
+          session = queue.shift
+          session.ensure_valid! since: @keepalive
+          session
         end
 
         def checkin session
