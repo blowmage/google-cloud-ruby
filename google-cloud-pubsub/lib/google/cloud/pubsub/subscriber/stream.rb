@@ -231,7 +231,7 @@ module Google
               end
             end
           rescue GRPC::DeadlineExceeded, GRPC::Unavailable, GRPC::Cancelled,
-                 GRPC::ResourceExhausted, GRPC::Internal
+                 GRPC::ResourceExhausted, GRPC::Internal, GRPC::Core::CallError
             # The GAPIC layer will raise DeadlineExceeded when stream is opened
             # longer than the timeout value it is configured for. When this
             # happends, restart the stream stealthly.
