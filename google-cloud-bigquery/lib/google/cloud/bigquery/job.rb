@@ -91,6 +91,15 @@ module Google
         end
 
         ##
+        # The geographic location of the job.
+        #
+        # @return [String] The job location.
+        #
+        def location
+          @gapi.job_reference.location
+        end
+
+        ##
         # The email address of the user who ran the job.
         #
         # @return [String] The email address.

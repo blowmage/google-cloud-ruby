@@ -322,9 +322,9 @@ module Google
                       dataset: dataset, project: project,
                       legacy_sql: legacy_sql, standard_sql: standard_sql,
                       maximum_billing_tier: maximum_billing_tier,
-                      maximum_bytes_billed: maximum_bytes_billed,
+                      maximum_bytes_billed: maximum_bytes_billed, udfs: udfs,
                       params: params, external: external, labels: labels,
-                      job_id: job_id, prefix: prefix, udfs: udfs }
+                      job_id: job_id, prefix: prefix, location: nil }
           gapi = service.query_job query, options
           Job.from_gapi gapi, service
         end

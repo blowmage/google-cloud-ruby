@@ -264,7 +264,7 @@ module Google
 
           ensure_service!
           loop do
-            query_results_gapi = service.job_query_results job_id, max: 0
+            query_results_gapi = service.job_query_results job_id, location: location, max: 0
             if query_results_gapi.job_complete
               @destination_schema_gapi = query_results_gapi.schema
               break
@@ -452,7 +452,7 @@ module Google
         def ensure_schema!
           return unless destination_schema.nil?
 
-          query_results_gapi = service.job_query_results job_id, max: 0
+          query_results_gapi = service.job_query_results job_id, location: location, max: 0
           # raise "unable to retrieve schema" if query_results_gapi.schema.nil?
           @destination_schema_gapi = query_results_gapi.schema
         end

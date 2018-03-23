@@ -257,9 +257,9 @@ module Google
           execute(backoff: true) { service.get_job @project, job_id }
         end
 
-        def insert_job config
+        def insert_job config, location: nil
           job_object = API::Job.new(
-            job_reference: job_ref_from(nil, nil),
+            job_reference: job_ref_from(nil, nil, location),
             configuration: config
           )
           # Jobs have generated id, so this operation is considered idempotent
@@ -279,6 +279,7 @@ module Google
           execute backoff: true do
             service.get_job_query_results @project,
                                           job_id,
+                                          location: options.delete(:location),
                                           max_results: options.delete(:max),
                                           page_token: options.delete(:token),
                                           start_index: options.delete(:start),
@@ -390,12 +391,13 @@ module Google
         # If no job_id or prefix is given, always generate a client-side job ID
         # anyway, for idempotent retry in the google-api-client layer.
         # See https://cloud.google.com/bigquery/docs/managing-jobs#generate-jobid
-        def job_ref_from job_id, prefix
+        def job_ref_from job_id, prefix, location
           prefix ||= "job_"
           job_id ||= "#{prefix}#{generate_id}"
           API::JobReference.new(
             project_id: @project,
-            job_id: job_id
+            job_id: job_id,
+            location: location
           )
         end
 
@@ -423,7 +425,7 @@ module Google
         def load_table_file_config dataset_id, table_id, file, options = {}
           load_opts = load_table_file_opts dataset_id, table_id, file, options
           req = API::Job.new(
-            job_reference: job_ref_from(options[:job_id], options[:prefix]),
+            job_reference: job_ref_from(options[:job_id], options[:prefix], options[:location]),
             configuration: API::JobConfiguration.new(
               load: API::JobConfigurationLoad.new(load_opts),
               dry_run: options[:dryrun]
@@ -460,7 +462,7 @@ module Google
         def load_table_url_config dataset_id, table_id, urls, options = {}
           load_opts = load_table_url_opts dataset_id, table_id, urls, options
           req = API::Job.new(
-            job_reference: job_ref_from(options[:job_id], options[:prefix]),
+            job_reference: job_ref_from(options[:job_id], options[:prefix], options[:location]),
             configuration: API::JobConfiguration.new(
               load: API::JobConfigurationLoad.new(load_opts),
               dry_run: options[:dryrun]
@@ -478,7 +480,7 @@ module Google
           dest_table = table_ref_from options[:table]
           dataset_config = dataset_ref_from options[:dataset], options[:project]
           req = API::Job.new(
-            job_reference: job_ref_from(options[:job_id], options[:prefix]),
+            job_reference: job_ref_from(options[:job_id], options[:prefix], options[:location]),
             configuration: API::JobConfiguration.new(
               query: API::JobConfigurationQuery.new(
                 query: query,
@@ -575,7 +577,7 @@ module Google
         # Job description for copy job
         def copy_table_config source, target, options = {}
           req = API::Job.new(
-            job_reference: job_ref_from(options[:job_id], options[:prefix]),
+            job_reference: job_ref_from(options[:job_id], options[:prefix], options[:location]),
             configuration: API::JobConfiguration.new(
               copy: API::JobConfigurationTableCopy.new(
                 source_table: source,
@@ -596,7 +598,7 @@ module Google
           end
           dest_format = source_format storage_urls.first, options[:format]
           req = API::Job.new(
-            job_reference: job_ref_from(options[:job_id], options[:prefix]),
+            job_reference: job_ref_from(options[:job_id], options[:prefix], options[:location]),
             configuration: API::JobConfiguration.new(
               extract: API::JobConfigurationExtract.new(
                 destination_uris: Array(storage_urls),

@@ -53,6 +53,8 @@ describe Google::Cloud::Bigquery::Job, :mock_bigquery do
   it "knows its attributes" do
     job.job_id.wont_be :nil?
     job.job_id.must_equal job_gapi.job_reference.job_id
+    job.project_id.must_equal project
+    job.location.must_equal "US"
     job.labels.must_equal labels
     job.labels.must_be :frozen?
     job.user_email.must_equal "user@example.com"

@@ -307,7 +307,8 @@ class MockBigquery < Minitest::Spec
     {
       "jobReference" => {
         "projectId" => project,
-        "jobId" => job_id
+        "jobId" => job_id,
+        "location" => "US"
       },
       "configuration" => {
         "copy" => {
@@ -387,7 +388,8 @@ class MockBigquery < Minitest::Spec
       "selfLink" => "http://bigquery/projects/#{project}/jobs/#{id}",
       "jobReference" => {
         "projectId" => project,
-        "jobId" => id
+        "jobId" => id,
+        "location" => "US"
       },
       "configuration" => {
         # config call goes here
@@ -436,7 +438,8 @@ class MockBigquery < Minitest::Spec
   def job_reference_gapi project, job_id
     Google::Apis::BigqueryV2::JobReference.new(
       project_id: project,
-      job_id: job_id
+      job_id: job_id,
+      location: "US"
     )
   end
 
@@ -497,8 +500,8 @@ class MockBigquery < Minitest::Spec
     hash.to_json
   end
 
-  def query_job_gapi query, parameter_mode: nil, dataset: nil, job_id: "job_9876543210"
-    gapi = Google::Apis::BigqueryV2::Job.from_json query_job_json query, job_id: job_id
+  def query_job_gapi query, parameter_mode: nil, dataset: nil, job_id: "job_9876543210", location: "US"
+    gapi = Google::Apis::BigqueryV2::Job.from_json query_job_json query, job_id: job_id, location: location
     gapi.configuration.query.parameter_mode = parameter_mode if parameter_mode
     gapi.configuration.query.default_dataset = Google::Apis::BigqueryV2::DatasetReference.new(
       dataset_id: dataset, project_id: project
@@ -506,11 +509,12 @@ class MockBigquery < Minitest::Spec
     gapi
   end
 
-  def query_job_json query, job_id: "job_9876543210"
+  def query_job_json query, job_id: "job_9876543210", location: "US"
     {
       "jobReference" => {
         "projectId" => project,
-        "jobId" => job_id
+        "jobId" => job_id,
+        "location" => location
       },
       "configuration" => {
         "query" => {
@@ -540,7 +544,8 @@ class MockBigquery < Minitest::Spec
     {
       "jobReference" => {
         "projectId" => project,
-        "jobId" => job_id
+        "jobId" => job_id,
+        "location" => "US"
       },
       "configuration" => {
         "extract" => {
@@ -603,7 +608,8 @@ class MockBigquery < Minitest::Spec
       "etag" => "etag1234567890",
       "jobReference" => {
         "projectId" => project,
-        "jobId" => "job_9876543210"
+        "jobId" => "job_9876543210",
+        "location" => "US"
       },
       "schema" => random_schema_hash,
       "rows" => random_data_rows,

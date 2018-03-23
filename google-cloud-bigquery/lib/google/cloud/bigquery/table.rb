@@ -1153,7 +1153,8 @@ module Google
                      job_id: nil, prefix: nil, labels: nil
           ensure_service!
           options = { create: create, write: write, dryrun: dryrun,
-                      job_id: job_id, prefix: prefix, labels: labels }
+                      job_id: job_id, prefix: prefix, location: location,
+                      labels: labels }
           gapi = service.copy_table table_ref,
                                     get_table_ref(destination_table),
                                     options
@@ -1303,7 +1304,8 @@ module Google
           ensure_service!
           options = { format: format, compression: compression,
                       delimiter: delimiter, header: header, dryrun: dryrun,
-                      job_id: job_id, prefix: prefix, labels: labels }
+                      job_id: job_id, prefix: prefix, location: location,
+                      labels: labels }
           gapi = service.extract_table table_ref, extract_url, options
           Job.from_gapi gapi, service
         end
@@ -1548,12 +1550,12 @@ module Google
           ensure_service!
           options = { format: format, create: create, write: write,
                       projection_fields: projection_fields,
-                      jagged_rows: jagged_rows,
+                      jagged_rows: jagged_rows, labels: labels,
                       quoted_newlines: quoted_newlines, encoding: encoding,
                       delimiter: delimiter, ignore_unknown: ignore_unknown,
                       max_bad_records: max_bad_records, quote: quote,
                       skip_leading: skip_leading, dryrun: dryrun,
-                      job_id: job_id, prefix: prefix, labels: labels,
+                      job_id: job_id, prefix: prefix, location: location,
                       autodetect: autodetect, null_marker: null_marker }
           return load_storage(files, options) if storage_url? files
           return load_local(files, options) if local_file? files

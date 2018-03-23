@@ -900,9 +900,9 @@ module Google
                       large_results: large_results, flatten: flatten,
                       legacy_sql: legacy_sql, standard_sql: standard_sql,
                       maximum_billing_tier: maximum_billing_tier,
-                      maximum_bytes_billed: maximum_bytes_billed,
+                      maximum_bytes_billed: maximum_bytes_billed, udfs: udfs,
                       params: params, external: external, labels: labels,
-                      job_id: job_id, prefix: prefix, udfs: udfs }
+                      job_id: job_id, prefix: prefix, location: location }
           options[:dataset] ||= self
           ensure_service!
           gapi = service.query_job query, options
@@ -1382,7 +1382,7 @@ module Google
                       skip_leading: skip_leading, dryrun: dryrun,
                       schema: schema_gapi, job_id: job_id, prefix: prefix,
                       labels: labels, autodetect: autodetect,
-                      null_marker: null_marker }
+                      null_marker: null_marker, location: location }
           return load_storage(table_id, files, options) if storage_url? files
           return load_local(table_id, files, options) if local_file? files
           raise Google::Cloud::Error, "Don't know how to load #{files}"

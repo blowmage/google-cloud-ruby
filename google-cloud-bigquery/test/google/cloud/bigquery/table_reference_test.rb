@@ -215,6 +215,10 @@ describe Google::Cloud::Bigquery::Table, :reference, :mock_bigquery do
     mock = Minitest::Mock.new
     bigquery.service.mocked_service = mock
     job_gapi = copy_job_gapi(table, target_table)
+    job_resp_gapi = job_gapi.dup
+    job_resp_gapi.status = status "done"
+    job_gapi.job_reference.location = nil # no location set
+
     mock.expect :insert_job, job_gapi, [project, job_gapi]
 
     job = table.copy_job target_table
@@ -229,6 +233,8 @@ describe Google::Cloud::Bigquery::Table, :reference, :mock_bigquery do
     job_gapi = copy_job_gapi(table, target_table)
     job_resp_gapi = job_gapi.dup
     job_resp_gapi.status = status "done"
+    job_gapi.job_reference.location = nil # no location set
+
     mock.expect :insert_job, job_resp_gapi, [project, job_gapi]
 
     result = table.copy target_table
@@ -241,6 +247,9 @@ describe Google::Cloud::Bigquery::Table, :reference, :mock_bigquery do
     mock = Minitest::Mock.new
     bigquery.service.mocked_service = mock
     job_gapi = extract_job_gapi(table, storage_file)
+    job_resp_gapi = job_gapi.dup
+    job_resp_gapi.status = status "done"
+    job_gapi.job_reference.location = nil # no location set
 
     mock.expect :insert_job, job_gapi, [project, job_gapi]
 
@@ -256,6 +265,7 @@ describe Google::Cloud::Bigquery::Table, :reference, :mock_bigquery do
     job_gapi = extract_job_gapi(table, storage_file)
     job_resp_gapi = job_gapi.dup
     job_resp_gapi.status = status "done"
+    job_gapi.job_reference.location = nil # no location set
 
     mock.expect :insert_job, job_resp_gapi, [project, job_gapi]
 
@@ -268,6 +278,7 @@ describe Google::Cloud::Bigquery::Table, :reference, :mock_bigquery do
   it "can load data from a storage file with load_job" do
     mock = Minitest::Mock.new
     job_gapi = load_job_url_gapi table_gapi.table_reference, load_url
+    job_gapi.job_reference.location = nil # no location set
     mock.expect :insert_job, load_job_resp_gapi(table, load_url),
       [project, job_gapi]
     table.service.mocked_service = mock
