@@ -199,6 +199,7 @@ module Google
             end
 
             # Call the StreamingPull API to get the response enumerator
+            log_info { "A Subscriber Stream thread is starting." }
             enum = @subscriber.service.streaming_pull @request_queue.each
 
             loop do
@@ -252,12 +253,25 @@ module Google
                  GRPC::Unavailable, GRPC::Core::CallError
             # Restart the stream with an incremental back for a retriable error.
             # Also when GRPC raises the internal CallError.
+            log_info do
+              "A Subscriber Stream received the following gRPC error and " \
+                "will restart: #{e.message}\n#{e.backtrace.join('\\n')}"
+            end
 
             retry
           rescue RestartStream
+            log_info do
+              "A Subscriber's gRPC stream closed unexpectedly, will restart"
+            end
+
             retry
           rescue StandardError => e
             @subscriber.error! e
+
+            log_info do
+              "A Subscriber Stream received an unexpected error and will " \
+                "restart: #{e.message}\n#{e.backtrace.join('\\n')}"
+            end
 
             retry
           end
@@ -290,20 +304,7 @@ module Google
             back_thread = Thread.new { background_run }
 
             # create another thread to monitor the background thread
-            Thread.new Thread.main, back_thread do |sub_thd, back_thd|
-              begin
-                back_thd.join
-
-                # Restart unless the stream was previously stoppped
-                synchronize do
-                  @background_thread = nil
-                  start_streaming! unless @stopped
-                end
-              rescue StandardError => error
-                # The stream had an error, so re-raise on the subscriber thread.
-                sub_thd.raise error
-              end
-            end
+            monitor_back_thread back_thread
 
             # put the streaming thread in an ivar, so we know it is
             @background_thread = back_thread
@@ -363,6 +364,45 @@ module Google
             return "error" if status.nil?
             return "stopped" if status == false
             status
+          end
+
+          private
+
+          def monitor_back_thread back_thread
+            Thread.new Thread.main, back_thread do |sub_thd, back_thd|
+              begin
+                back_thd.join
+
+                # Restart unless the stream was previously stoppped
+                log_info do
+                  restart_msg = " The Subscriber Stream thread will " \
+                                "attempt to restart."
+                  msg = "A Subscriber Stream thread was stopped."
+                  msg += restart_msg unless synchronize { @stopped }
+                  msg
+                end
+
+                synchronize do
+                  @background_thread = nil
+                  start_streaming! unless @stopped
+                end
+              rescue StandardError => error
+                log_info do
+                  "A Subscriber Stream thread raised an error, re-raising " \
+                    "on main thread: #{error.message}\n#" \
+                    "{error.backtrace.join('\\n')}"
+                end
+
+                # The stream had an error, so re-raise on the subscriber thread.
+                sub_thd.raise error
+              end
+            end
+          end
+
+          def log_info &log_msg
+            return if Google::Cloud.logger.nil?
+
+            Google::Cloud.logger.info(&log_msg)
           end
         end
       end

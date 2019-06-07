@@ -28,7 +28,88 @@ describe Google::Cloud::PubSub::Subscriber, :error, :mock_pubsub do
   let(:rec_msg3_grpc) { Google::Cloud::PubSub::V1::ReceivedMessage.new \
                           rec_message_hash("rec_message3-msg-goes-here", 1113) }
 
-  it "relays errors to the user" do
+  it "restarts and does not relay known GRPC errors to the user" do
+    pull_res1 = Google::Cloud::PubSub::V1::StreamingPullResponse.new received_messages: [rec_msg1_grpc]
+    pull_res2 = Google::Cloud::PubSub::V1::StreamingPullResponse.new received_messages: [rec_msg2_grpc]
+    pull_res3 = Google::Cloud::PubSub::V1::StreamingPullResponse.new received_messages: [rec_msg3_grpc]
+    response_groups = [[pull_res1, GRPC::Unauthenticated.new], [pull_res2, GRPC::Unavailable.new], [pull_res3]]
+
+    stub = StreamingPullStub.new response_groups
+    called = 0
+    errors = []
+
+    subscription.service.mocked_subscriber = stub
+    subscriber = subscription.listen streams: 1 do |msg|
+      assert_kind_of Google::Cloud::PubSub::ReceivedMessage, msg
+      msg.ack!
+      called +=1
+    end
+
+    subscriber.on_error do |error|
+      errors << error
+    end
+
+    subscriber.start
+
+    subscriber_retries = 0
+    while called < 3
+      fail "total number of calls were never made" if subscriber_retries > 100
+      subscriber_retries += 1
+      sleep 0.01
+    end
+
+    errors.count.must_equal 0
+
+    subscriber.stop
+    subscriber.wait!
+
+    # stub requests are not guaranteed, so don't check in this test
+  end
+
+  it "restarts and relays unknown GRPC errors to the user" do
+    pull_res1 = Google::Cloud::PubSub::V1::StreamingPullResponse.new received_messages: [rec_msg1_grpc]
+    pull_res2 = Google::Cloud::PubSub::V1::StreamingPullResponse.new received_messages: [rec_msg2_grpc]
+    pull_res3 = Google::Cloud::PubSub::V1::StreamingPullResponse.new received_messages: [rec_msg3_grpc]
+    response_groups = [[pull_res1, GRPC::AlreadyExists.new], [pull_res2, GRPC::PermissionDenied.new], [pull_res3]]
+
+    stub = StreamingPullStub.new response_groups
+    called = 0
+    errors = []
+
+    subscription.service.mocked_subscriber = stub
+    subscriber = subscription.listen streams: 1 do |msg|
+      assert_kind_of Google::Cloud::PubSub::ReceivedMessage, msg
+      msg.ack!
+      called +=1
+    end
+
+    subscriber.on_error do |error|
+      errors << error
+    end
+
+    subscriber.last_error.must_be :nil?
+
+    subscriber.start
+
+    subscriber_retries = 0
+    while called < 3
+      fail "total number of calls were never made" if subscriber_retries > 100
+      subscriber_retries += 1
+      sleep 0.01
+    end
+
+    errors.count.must_equal 2
+    errors[0].must_be_kind_of GRPC::AlreadyExists
+    errors[1].must_be_kind_of GRPC::PermissionDenied
+    subscriber.last_error.must_be_kind_of GRPC::PermissionDenied
+
+    subscriber.stop
+    subscriber.wait!
+
+    # stub requests are not guaranteed, so don't check in this test
+  end
+
+  it "restarts and relays unknown errors to the user" do
     pull_res1 = Google::Cloud::PubSub::V1::StreamingPullResponse.new received_messages: [rec_msg1_grpc]
     pull_res2 = Google::Cloud::PubSub::V1::StreamingPullResponse.new received_messages: [rec_msg2_grpc]
     pull_res3 = Google::Cloud::PubSub::V1::StreamingPullResponse.new received_messages: [rec_msg3_grpc]
@@ -46,7 +127,6 @@ describe Google::Cloud::PubSub::Subscriber, :error, :mock_pubsub do
     end
 
     subscriber.on_error do |error|
-      # raise error
       errors << error
     end
 
