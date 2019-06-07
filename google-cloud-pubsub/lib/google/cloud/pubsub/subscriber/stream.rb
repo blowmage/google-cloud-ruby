@@ -287,7 +287,26 @@ module Google
             return if @background_thread
 
             # create new background thread to handle new enumerator
-            @background_thread = Thread.new { background_run }
+            back_thread = Thread.new { background_run }
+
+            # create another thread to monitor the background thread
+            Thread.new Thread.main, back_thread do |sub_thd, back_thd|
+              begin
+                back_thd.join
+
+                # Restart unless the stream was previously stoppped
+                synchronize do
+                  @background_thread = nil
+                  start_streaming! unless @stopped
+                end
+              rescue StandardError => error
+                # The stream had an error, so re-raise on the subscriber thread.
+                sub_thd.raise error
+              end
+            end
+
+            # put the streaming thread in an ivar, so we know it is
+            @background_thread = back_thread
           end
 
           def pause_streaming!
