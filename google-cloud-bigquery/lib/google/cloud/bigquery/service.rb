@@ -54,7 +54,7 @@ module Google
           return mocked_service if mocked_service
           @service ||= begin
             service = API::BigqueryService.new
-            service.client_options.application_name    = "gcloud-ruby"
+            service.client_options.application_name    = "gcloud-ruby".freeze
             service.client_options.application_version = \
               Google::Cloud::Bigquery::VERSION
             service.client_options.open_timeout_sec = timeout
@@ -62,7 +62,7 @@ module Google
             service.client_options.send_timeout_sec = timeout
             service.request_options.retries = 0 # handle retries in #execute
             service.request_options.header ||= {}
-            service.request_options.header["x-goog-api-client"] = \
+            service.request_options.header["x-goog-api-client".freeze] = \
               "gl-ruby/#{RUBY_VERSION} gccl/#{Google::Cloud::Bigquery::VERSION}"
             service.authorization = @credentials.client
             service
@@ -108,7 +108,9 @@ module Google
           patch_with_backoff = false
           options = {}
           if patched_dataset_gapi.etag
-            options[:header] = { "If-Match" => patched_dataset_gapi.etag }
+            options[:header] = {
+              "If-Match".freeze => patched_dataset_gapi.etag
+            }
             # The patch with etag operation is considered idempotent
             patch_with_backoff = true
           end
@@ -174,7 +176,7 @@ module Google
           patch_with_backoff = false
           options = {}
           if patched_table_gapi.etag
-            options[:header] = { "If-Match" => patched_table_gapi.etag }
+            options[:header] = { "If-Match".freeze => patched_table_gapi.etag }
             # The patch with etag operation is considered idempotent
             patch_with_backoff = true
           end
@@ -246,7 +248,7 @@ module Google
           execute backoff: true do
             service.list_jobs \
               @project, all_users: options[:all], max_results: options[:max],
-                        page_token: options[:token], projection: "full",
+                        page_token: options[:token], projection: "full".freeze,
                         state_filter: options[:filter]
           end
         end
@@ -352,9 +354,9 @@ module Google
             raise ArgumentError, "unable to identify table from #{str.inspect}"
           end
           str_table_ref_hash = {
-            project_id: m["prj"],
-            dataset_id: m["dts"],
-            table_id:   m["tbl"]
+            project_id: m["prj".freeze],
+            dataset_id: m["dts".freeze],
+            table_id:   m["tbl".freeze]
           }.delete_if { |_, v| v.nil? }
           str_table_ref_hash = default_ref.to_h.merge str_table_ref_hash
           ref = Google::Apis::BigqueryV2::TableReference.new str_table_ref_hash
@@ -383,7 +385,7 @@ module Google
         # anyway, for idempotent retry in the google-api-client layer.
         # See https://cloud.google.com/bigquery/docs/managing-jobs#generate-jobid
         def job_ref_from job_id, prefix, location: nil
-          prefix ||= "job_"
+          prefix ||= "job_".freeze
           job_id ||= "#{prefix}#{generate_id}"
           job_ref = API::JobReference.new(
             project_id: @project,
@@ -487,10 +489,10 @@ module Google
 
           def retry_error_reason? err_body
             err_hash = JSON.parse err_body
-            json_errors = Array err_hash["error"]["errors"]
+            json_errors = Array err_hash["error".freeze]["errors".freeze]
             return false if json_errors.empty?
             json_errors.each do |json_error|
-              return false unless @reasons.include? json_error["reason"]
+              return false unless @reasons.include? json_error["reason".freeze]
             end
             true
           rescue StandardError

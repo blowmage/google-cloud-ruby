@@ -79,7 +79,7 @@ module Google
         # @return [String] A string containing the character, such as `","`.
         #
         def delimiter
-          @gapi.configuration.load.field_delimiter || ","
+          @gapi.configuration.load.field_delimiter || ",".freeze
         end
 
         ##
@@ -104,7 +104,7 @@ module Google
         def utf8?
           val = @gapi.configuration.load.encoding
           return true if val.nil?
-          val == "UTF-8"
+          val == "UTF-8".freeze
         end
 
         ##
@@ -115,7 +115,7 @@ module Google
         #
         def iso8859_1?
           val = @gapi.configuration.load.encoding
-          val == "ISO-8859-1"
+          val == "ISO-8859-1".freeze
         end
 
         ##
@@ -129,7 +129,7 @@ module Google
         #
         def quote
           val = @gapi.configuration.load.quote
-          val = "\"" if val.nil?
+          val = "\"".freeze if val.nil?
           val
         end
 
@@ -198,7 +198,7 @@ module Google
         #
         def json?
           val = @gapi.configuration.load.source_format
-          val == "NEWLINE_DELIMITED_JSON"
+          val == "NEWLINE_DELIMITED_JSON".freeze
         end
 
         ##
@@ -210,7 +210,7 @@ module Google
         def csv?
           val = @gapi.configuration.load.source_format
           return true if val.nil?
-          val == "CSV"
+          val == "CSV".freeze
         end
 
         ##
@@ -221,7 +221,7 @@ module Google
         #
         def backup?
           val = @gapi.configuration.load.source_format
-          val == "DATASTORE_BACKUP"
+          val == "DATASTORE_BACKUP".freeze
         end
 
         ##

@@ -41,40 +41,40 @@ module Google
         class Access
           # @private
           ROLES = {
-            "reader" => "READER",
-            "writer" => "WRITER",
-            "owner"  => "OWNER"
+            "reader".freeze => "READER".freeze,
+            "writer".freeze => "WRITER".freeze,
+            "owner".freeze  => "OWNER".freeze
           }.freeze
 
           # @private
           SCOPES = {
-            "user"           => :user_by_email,
-            "user_by_email"  => :user_by_email,
-            "userByEmail"    => :user_by_email,
-            "group"          => :group_by_email,
-            "group_by_email" => :group_by_email,
-            "groupByEmail"   => :group_by_email,
-            "domain"         => :domain,
-            "special"        => :special_group,
-            "special_group"  => :special_group,
-            "specialGroup"   => :special_group,
-            "view"           => :view
+            "user".freeze           => :user_by_email,
+            "user_by_email".freeze  => :user_by_email,
+            "userByEmail".freeze    => :user_by_email,
+            "group".freeze          => :group_by_email,
+            "group_by_email".freeze => :group_by_email,
+            "groupByEmail".freeze   => :group_by_email,
+            "domain".freeze         => :domain,
+            "special".freeze        => :special_group,
+            "special_group".freeze  => :special_group,
+            "specialGroup".freeze   => :special_group,
+            "view".freeze           => :view
           }.freeze
 
           # @private
           GROUPS = {
-            "owners"                  => "projectOwners",
-            "project_owners"          => "projectOwners",
-            "projectOwners"           => "projectOwners",
-            "readers"                 => "projectReaders",
-            "project_readers"         => "projectReaders",
-            "projectReaders"          => "projectReaders",
-            "writers"                 => "projectWriters",
-            "project_writers"         => "projectWriters",
-            "projectWriters"          => "projectWriters",
-            "all"                     => "allAuthenticatedUsers",
-            "all_authenticated_users" => "allAuthenticatedUsers",
-            "allAuthenticatedUsers"   => "allAuthenticatedUsers"
+            "owners".freeze                  => "projectOwners".freeze,
+            "project_owners".freeze          => "projectOwners".freeze,
+            "projectOwners".freeze           => "projectOwners".freeze,
+            "readers".freeze                 => "projectReaders".freeze,
+            "project_readers".freeze         => "projectReaders".freeze,
+            "projectReaders".freeze          => "projectReaders".freeze,
+            "writers".freeze                 => "projectWriters".freeze,
+            "project_writers".freeze         => "projectWriters".freeze,
+            "projectWriters".freeze          => "projectWriters".freeze,
+            "all".freeze                     => "allAuthenticatedUsers".freeze,
+            "all_authenticated_users".freeze => "allAuthenticatedUsers".freeze,
+            "allAuthenticatedUsers".freeze   => "allAuthenticatedUsers".freeze
           }.freeze
 
           ##

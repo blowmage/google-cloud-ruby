@@ -80,25 +80,25 @@ module Google
             else
               format_row value[:v], field.fields
             end
-          elsif field.type == "STRING"
+          elsif field.type == "STRING".freeze
             String value[:v]
-          elsif field.type == "INTEGER"
+          elsif field.type == "INTEGER".freeze
             Integer value[:v]
-          elsif field.type == "FLOAT"
+          elsif field.type == "FLOAT".freeze
             Float value[:v]
-          elsif field.type == "NUMERIC"
+          elsif field.type == "NUMERIC".freeze
             BigDecimal value[:v]
-          elsif field.type == "BOOLEAN"
-            (value[:v] == "true" ? true : (value[:v] == "false" ? false : nil))
-          elsif field.type == "BYTES"
+          elsif field.type == "BOOLEAN".freeze
+            (value[:v] == "true".freeze ? true : (value[:v] == "false".freeze ? false : nil))
+          elsif field.type == "BYTES".freeze
             StringIO.new Base64.decode64 value[:v]
-          elsif field.type == "TIMESTAMP"
+          elsif field.type == "TIMESTAMP".freeze
             ::Time.at Float(value[:v])
-          elsif field.type == "TIME"
+          elsif field.type == "TIME".freeze
             Bigquery::Time.new value[:v]
-          elsif field.type == "DATETIME"
+          elsif field.type == "DATETIME".freeze
             ::Time.parse("#{value[:v]} UTC").to_datetime
-          elsif field.type == "DATE"
+          elsif field.type == "DATE".freeze
             Date.parse value[:v]
           else
             value[:v]
@@ -111,72 +111,72 @@ module Google
           if TrueClass === value
             return Google::Apis::BigqueryV2::QueryParameter.new(
               parameter_type:  Google::Apis::BigqueryV2::QueryParameterType.new(
-                type: "BOOL"),
+                type: "BOOL".freeze),
               parameter_value: Google::Apis::BigqueryV2::QueryParameterValue.new(
                 value: true)
             )
           elsif FalseClass === value
             return Google::Apis::BigqueryV2::QueryParameter.new(
               parameter_type:  Google::Apis::BigqueryV2::QueryParameterType.new(
-                type: "BOOL"),
+                type: "BOOL".freeze),
               parameter_value: Google::Apis::BigqueryV2::QueryParameterValue.new(
                 value: false)
             )
           elsif Integer === value
             return Google::Apis::BigqueryV2::QueryParameter.new(
               parameter_type:  Google::Apis::BigqueryV2::QueryParameterType.new(
-                type: "INT64"),
+                type: "INT64".freeze),
               parameter_value: Google::Apis::BigqueryV2::QueryParameterValue.new(
                 value: value)
             )
           elsif Float === value
             return Google::Apis::BigqueryV2::QueryParameter.new(
               parameter_type:  Google::Apis::BigqueryV2::QueryParameterType.new(
-                type: "FLOAT64"),
+                type: "FLOAT64".freeze),
               parameter_value: Google::Apis::BigqueryV2::QueryParameterValue.new(
                 value: value)
             )
           elsif BigDecimal === value
             # Round to precision of 9
-            value_str = value.finite? ? value.round(9).to_s("F") : value.to_s
+            value_str = value.finite? ? value.round(9).to_s("F".freeze) : value.to_s
             return Google::Apis::BigqueryV2::QueryParameter.new(
               parameter_type:  Google::Apis::BigqueryV2::QueryParameterType.new(
-                type: "NUMERIC"),
+                type: "NUMERIC".freeze),
               parameter_value: Google::Apis::BigqueryV2::QueryParameterValue.new(
                 value: value_str)
             )
           elsif String === value
             return Google::Apis::BigqueryV2::QueryParameter.new(
               parameter_type:  Google::Apis::BigqueryV2::QueryParameterType.new(
-                type: "STRING"),
+                type: "STRING".freeze),
               parameter_value: Google::Apis::BigqueryV2::QueryParameterValue.new(
                 value: value)
             )
           elsif DateTime === value
             return Google::Apis::BigqueryV2::QueryParameter.new(
               parameter_type:  Google::Apis::BigqueryV2::QueryParameterType.new(
-                type: "DATETIME"),
+                type: "DATETIME".freeze),
               parameter_value: Google::Apis::BigqueryV2::QueryParameterValue.new(
-                value: value.strftime("%Y-%m-%d %H:%M:%S.%6N"))
+                value: value.strftime("%Y-%m-%d %H:%M:%S.%6N".freeze))
             )
           elsif Date === value
             return Google::Apis::BigqueryV2::QueryParameter.new(
               parameter_type:  Google::Apis::BigqueryV2::QueryParameterType.new(
-                type: "DATE"),
+                type: "DATE".freeze),
               parameter_value: Google::Apis::BigqueryV2::QueryParameterValue.new(
                 value: value.to_s)
             )
           elsif ::Time === value
             return Google::Apis::BigqueryV2::QueryParameter.new(
               parameter_type:  Google::Apis::BigqueryV2::QueryParameterType.new(
-                type: "TIMESTAMP"),
+                type: "TIMESTAMP".freeze),
               parameter_value: Google::Apis::BigqueryV2::QueryParameterValue.new(
-                value: value.strftime("%Y-%m-%d %H:%M:%S.%6N%:z"))
+                value: value.strftime("%Y-%m-%d %H:%M:%S.%6N%:z".freeze))
             )
           elsif Bigquery::Time === value
             return Google::Apis::BigqueryV2::QueryParameter.new(
               parameter_type:  Google::Apis::BigqueryV2::QueryParameterType.new(
-              type: "TIME"),
+              type: "TIME".freeze),
               parameter_value: Google::Apis::BigqueryV2::QueryParameterValue.new(
                 value: value.value)
             )
@@ -184,16 +184,16 @@ module Google
             value.rewind
             return Google::Apis::BigqueryV2::QueryParameter.new(
               parameter_type:  Google::Apis::BigqueryV2::QueryParameterType.new(
-                type: "BYTES"),
+                type: "BYTES".freeze),
               parameter_value: Google::Apis::BigqueryV2::QueryParameterValue.new(
                 value: Base64.strict_encode64(
-                  value.read.force_encoding("ASCII-8BIT")))
+                  value.read.force_encoding("ASCII-8BIT".freeze)))
             )
           elsif Array === value
             array_params = value.map { |param| Convert.to_query_param param }
             return Google::Apis::BigqueryV2::QueryParameter.new(
               parameter_type: Google::Apis::BigqueryV2::QueryParameterType.new(
-                type: "ARRAY",
+                type: "ARRAY".freeze,
                 array_type: array_params.first.parameter_type
               ),
               parameter_value: Google::Apis::BigqueryV2::QueryParameterValue.new(
@@ -214,7 +214,7 @@ module Google
 
             return Google::Apis::BigqueryV2::QueryParameter.new(
               parameter_type: Google::Apis::BigqueryV2::QueryParameterType.new(
-                type: "STRUCT",
+                type: "STRUCT".freeze,
                 struct_types: struct_pairs.map(&:first)
               ),
               parameter_value: Google::Apis::BigqueryV2::QueryParameterValue.new(
@@ -230,16 +230,16 @@ module Google
         # @private
         def self.to_json_value value
           if DateTime === value
-            value.strftime "%Y-%m-%d %H:%M:%S.%6N"
+            value.strftime "%Y-%m-%d %H:%M:%S.%6N".freeze
           elsif Date === value
             value.to_s
           elsif ::Time === value
-            value.strftime "%Y-%m-%d %H:%M:%S.%6N%:z"
+            value.strftime "%Y-%m-%d %H:%M:%S.%6N%:z".freeze
           elsif Bigquery::Time === value
             value.value
           elsif value.respond_to?(:read) && value.respond_to?(:rewind)
             value.rewind
-            Base64.strict_encode64(value.read.force_encoding("ASCII-8BIT"))
+            Base64.strict_encode64(value.read.force_encoding("ASCII-8BIT".freeze))
           elsif Array === value
             value.map { |v| to_json_value v }
           elsif Hash === value
@@ -277,13 +277,13 @@ module Google
         # @return [String] API representation of create disposition.
         def self.create_disposition str
           val = {
-            "create_if_needed" => "CREATE_IF_NEEDED",
-            "createifneeded"   => "CREATE_IF_NEEDED",
-            "if_needed"        => "CREATE_IF_NEEDED",
-            "needed"           => "CREATE_IF_NEEDED",
-            "create_never"     => "CREATE_NEVER",
-            "createnever"      => "CREATE_NEVER",
-            "never"            => "CREATE_NEVER"
+            "create_if_needed".freeze => "CREATE_IF_NEEDED".freeze,
+            "createifneeded".freeze   => "CREATE_IF_NEEDED".freeze,
+            "if_needed".freeze        => "CREATE_IF_NEEDED".freeze,
+            "needed".freeze           => "CREATE_IF_NEEDED".freeze,
+            "create_never".freeze     => "CREATE_NEVER".freeze,
+            "createnever".freeze      => "CREATE_NEVER".freeze,
+            "never".freeze            => "CREATE_NEVER".freeze
           }[str.to_s.downcase]
           return val unless val.nil?
           str
@@ -297,15 +297,15 @@ module Google
         # @return [String] API representation of write disposition.
         def self.write_disposition str
           val = {
-            "write_truncate" => "WRITE_TRUNCATE",
-            "writetruncate"  => "WRITE_TRUNCATE",
-            "truncate"       => "WRITE_TRUNCATE",
-            "write_append"   => "WRITE_APPEND",
-            "writeappend"    => "WRITE_APPEND",
-            "append"         => "WRITE_APPEND",
-            "write_empty"    => "WRITE_EMPTY",
-            "writeempty"     => "WRITE_EMPTY",
-            "empty"          => "WRITE_EMPTY"
+            "write_truncate".freeze => "WRITE_TRUNCATE".freeze,
+            "writetruncate".freeze  => "WRITE_TRUNCATE".freeze,
+            "truncate".freeze       => "WRITE_TRUNCATE".freeze,
+            "write_append".freeze   => "WRITE_APPEND".freeze,
+            "writeappend".freeze    => "WRITE_APPEND".freeze,
+            "append".freeze         => "WRITE_APPEND".freeze,
+            "write_empty".freeze    => "WRITE_EMPTY".freeze,
+            "writeempty".freeze     => "WRITE_EMPTY".freeze,
+            "empty".freeze          => "WRITE_EMPTY".freeze
           }[str.to_s.downcase]
           return val unless val.nil?
           str
@@ -319,15 +319,15 @@ module Google
         # @return [String] API representation of source format.
         def self.source_format format
           val = {
-            "csv"                    => "CSV",
-            "json"                   => "NEWLINE_DELIMITED_JSON",
-            "newline_delimited_json" => "NEWLINE_DELIMITED_JSON",
-            "avro"                   => "AVRO",
-            "orc"                    => "ORC",
-            "parquet"                => "PARQUET",
-            "datastore"              => "DATASTORE_BACKUP",
-            "backup"                 => "DATASTORE_BACKUP",
-            "datastore_backup"       => "DATASTORE_BACKUP"
+            "csv".freeze                    => "CSV".freeze,
+            "json".freeze                   => "NEWLINE_DELIMITED_JSON".freeze,
+            "newline_delimited_json".freeze => "NEWLINE_DELIMITED_JSON".freeze,
+            "avro".freeze                   => "AVRO".freeze,
+            "orc".freeze                    => "ORC".freeze,
+            "parquet".freeze                => "PARQUET".freeze,
+            "datastore".freeze              => "DATASTORE_BACKUP".freeze,
+            "backup".freeze                 => "DATASTORE_BACKUP".freeze,
+            "datastore_backup".freeze       => "DATASTORE_BACKUP".freeze
           }[format.to_s.downcase]
           return val unless val.nil?
           format
@@ -352,12 +352,16 @@ module Google
         #
         # @return [String] API representation of source format.
         def self.derive_source_format path
-          return "CSV"                    if path.end_with? ".csv"
-          return "NEWLINE_DELIMITED_JSON" if path.end_with? ".json"
-          return "AVRO"                   if path.end_with? ".avro"
-          return "ORC"                    if path.end_with? ".orc"
-          return "PARQUET"                if path.end_with? ".parquet"
-          return "DATASTORE_BACKUP"       if path.end_with? ".backup_info"
+          return "CSV".freeze if path.end_with? ".csv".freeze
+          if path.end_with? ".json".freeze
+            return "NEWLINE_DELIMITED_JSON".freeze
+          end
+          return "AVRO".freeze if path.end_with? ".avro".freeze
+          return "ORC".freeze if path.end_with? ".orc".freeze
+          return "PARQUET".freeze if path.end_with? ".parquet".freeze
+          if path.end_with? ".backup_info".freeze
+            return "DATASTORE_BACKUP".freeze
+          end
           nil
         end
 

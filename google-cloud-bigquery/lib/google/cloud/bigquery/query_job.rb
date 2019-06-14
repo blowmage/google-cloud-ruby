@@ -57,7 +57,7 @@ module Google
         #
         def batch?
           val = @gapi.configuration.query.priority
-          val == "BATCH"
+          val == "BATCH".freeze
         end
 
         ##
@@ -69,7 +69,7 @@ module Google
         def interactive?
           val = @gapi.configuration.query.priority
           return true if val.nil?
-          val == "INTERACTIVE"
+          val == "INTERACTIVE".freeze
         end
 
         ##
@@ -751,13 +751,13 @@ module Google
             case params
             when Array then
               @gapi.configuration.query.use_legacy_sql = false
-              @gapi.configuration.query.parameter_mode = "POSITIONAL"
+              @gapi.configuration.query.parameter_mode = "POSITIONAL".freeze
               @gapi.configuration.query.query_parameters = params.map do |param|
                 Convert.to_query_param param
               end
             when Hash then
               @gapi.configuration.query.use_legacy_sql = false
-              @gapi.configuration.query.parameter_mode = "NAMED"
+              @gapi.configuration.query.parameter_mode = "NAMED".freeze
               @gapi.configuration.query.query_parameters =
                 params.map do |name, param|
                   Convert.to_query_param(param).tap do |named_param|
@@ -1170,15 +1170,15 @@ module Google
           end
 
           def priority_value str
-            { "batch"       => "BATCH",
-              "interactive" => "INTERACTIVE" }[str.to_s.downcase]
+            { "batch".freeze       => "BATCH".freeze,
+              "interactive".freeze => "INTERACTIVE".freeze }[str.to_s.downcase]
           end
 
           def udfs_gapi_from array_or_str
             Array(array_or_str).map do |uri_or_code|
               resource =
                 Google::Apis::BigqueryV2::UserDefinedFunctionResource.new
-              if uri_or_code.start_with? "gs://"
+              if uri_or_code.start_with? "gs://".freeze
                 resource.resource_uri = uri_or_code
               else
                 resource.inline_code = uri_or_code

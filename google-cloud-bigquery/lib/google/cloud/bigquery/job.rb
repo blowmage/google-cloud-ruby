@@ -131,7 +131,7 @@ module Google
         #
         def running?
           return false if state.nil?
-          "running".casecmp(state).zero?
+          "running".freeze.casecmp(state).zero?
         end
 
         ##
@@ -141,7 +141,7 @@ module Google
         #
         def pending?
           return false if state.nil?
-          "pending".casecmp(state).zero?
+          "pending".freeze.casecmp(state).zero?
         end
 
         ##
@@ -154,7 +154,7 @@ module Google
         #
         def done?
           return false if state.nil?
-          "done".casecmp(state).zero?
+          "done".freeze.casecmp(state).zero?
         end
 
         ##
@@ -246,7 +246,7 @@ module Google
         #   }
         #
         def error
-          status["errorResult"]
+          status["errorResult".freeze]
         end
 
         ##
@@ -262,7 +262,7 @@ module Google
         #   }
         #
         def errors
-          Array status["errors"]
+          Array status["errors".freeze]
         end
 
         ##
@@ -397,11 +397,11 @@ module Google
         def gapi_error
           return nil unless failed?
 
-          error_status_code = status_code_for_reason error["reason"]
+          error_status_code = status_code_for_reason error["reason".freeze]
           error_body = error
-          error_body["errors"] = errors
+          error_body["errors".freeze] = errors
 
-          Google::Apis::Error.new error["message"],
+          Google::Apis::Error.new error["message".freeze],
                                   status_code: error_status_code,
                                   body:        error_body
         end
@@ -440,15 +440,17 @@ module Google
         end
 
         def status_code_for_reason reason
-          codes = { "accessDenied" => 403, "backendError" => 500,
-                    "billingNotEnabled" => 403,
-                    "billingTierLimitExceeded" => 400, "blocked" => 403,
-                    "duplicate" => 409, "internalError" => 500,
-                    "invalid" => 400, "invalidQuery" => 400, "notFound" => 404,
-                    "notImplemented" => 501, "quotaExceeded" => 403,
-                    "rateLimitExceeded" => 403, "resourceInUse" => 400,
-                    "resourcesExceeded" => 400, "responseTooLarge" => 403,
-                    "tableUnavailable" => 400 }
+          codes = {
+            "accessDenied".freeze => 403, "backendError".freeze => 500,
+            "billingNotEnabled".freeze => 403, "notFound".freeze => 404,
+            "billingTierLimitExceeded".freeze => 400, "blocked".freeze => 403,
+            "duplicate".freeze => 409, "internalError".freeze => 500,
+            "invalid".freeze => 400, "invalidQuery".freeze => 400,
+            "notImplemented".freeze => 501, "quotaExceeded".freeze => 403,
+            "rateLimitExceeded".freeze => 403, "resourceInUse".freeze => 400,
+            "resourcesExceeded".freeze => 400, "responseTooLarge".freeze => 403,
+            "tableUnavailable".freeze => 400
+          }
           codes[reason] || 0
         end
       end

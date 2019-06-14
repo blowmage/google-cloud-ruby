@@ -101,7 +101,7 @@ module Google
           # @return [Boolean] `true` when `NULLABLE`, `false` otherwise.
           #
           def nullable?
-            mode == "NULLABLE"
+            mode == "NULLABLE".freeze
           end
 
           ##
@@ -110,7 +110,7 @@ module Google
           # @return [Boolean] `true` when `REQUIRED`, `false` otherwise.
           #
           def required?
-            mode == "REQUIRED"
+            mode == "REQUIRED".freeze
           end
 
           ##
@@ -119,7 +119,7 @@ module Google
           # @return [Boolean] `true` when `REPEATED`, `false` otherwise.
           #
           def repeated?
-            mode == "REPEATED"
+            mode == "REPEATED".freeze
           end
 
           ##
@@ -169,7 +169,7 @@ module Google
           # @return [Boolean] `true` when `STRING`, `false` otherwise.
           #
           def string?
-            type == "STRING"
+            type == "STRING".freeze
           end
 
           ##
@@ -178,7 +178,7 @@ module Google
           # @return [Boolean] `true` when `INTEGER`, `false` otherwise.
           #
           def integer?
-            type == "INTEGER" || type == "INT64"
+            type == "INTEGER".freeze || type == "INT64".freeze
           end
 
           ##
@@ -187,7 +187,7 @@ module Google
           # @return [Boolean] `true` when `FLOAT`, `false` otherwise.
           #
           def float?
-            type == "FLOAT" || type == "FLOAT64"
+            type == "FLOAT".freeze || type == "FLOAT64".freeze
           end
 
           ##
@@ -196,7 +196,7 @@ module Google
           # @return [Boolean] `true` when `NUMERIC`, `false` otherwise.
           #
           def numeric?
-            type == "NUMERIC"
+            type == "NUMERIC".freeze
           end
 
           ##
@@ -205,7 +205,7 @@ module Google
           # @return [Boolean] `true` when `BOOLEAN`, `false` otherwise.
           #
           def boolean?
-            type == "BOOLEAN" || type == "BOOL"
+            type == "BOOLEAN".freeze || type == "BOOL".freeze
           end
 
           ##
@@ -214,7 +214,7 @@ module Google
           # @return [Boolean] `true` when `BYTES`, `false` otherwise.
           #
           def bytes?
-            type == "BYTES"
+            type == "BYTES".freeze
           end
 
           ##
@@ -223,7 +223,7 @@ module Google
           # @return [Boolean] `true` when `TIMESTAMP`, `false` otherwise.
           #
           def timestamp?
-            type == "TIMESTAMP"
+            type == "TIMESTAMP".freeze
           end
 
           ##
@@ -232,7 +232,7 @@ module Google
           # @return [Boolean] `true` when `TIME`, `false` otherwise.
           #
           def time?
-            type == "TIME"
+            type == "TIME".freeze
           end
 
           ##
@@ -241,7 +241,7 @@ module Google
           # @return [Boolean] `true` when `DATETIME`, `false` otherwise.
           #
           def datetime?
-            type == "DATETIME"
+            type == "DATETIME".freeze
           end
 
           ##
@@ -250,7 +250,7 @@ module Google
           # @return [Boolean] `true` when `DATE`, `false` otherwise.
           #
           def date?
-            type == "DATE"
+            type == "DATE".freeze
           end
 
           ##
@@ -259,7 +259,7 @@ module Google
           # @return [Boolean] `true` when `RECORD`, `false` otherwise.
           #
           def record?
-            type == "RECORD" || type == "STRUCT"
+            type == "RECORD".freeze || type == "STRUCT".freeze
           end
 
           ##
@@ -593,7 +593,7 @@ module Google
           end
 
           def record_check!
-            return unless type != "RECORD"
+            return unless type != "RECORD".freeze
             raise ArgumentError,
                   "Cannot add fields to a non-RECORD field (#{type})"
           end

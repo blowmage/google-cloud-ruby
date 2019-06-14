@@ -51,6 +51,24 @@ module Google
       #
       module External
         ##
+        # @private
+        SOURCE_FORMATS = {
+          "csv".freeze                    => "CSV".freeze,
+          "avro".freeze                   => "AVRO".freeze,
+          "json".freeze                   => "NEWLINE_DELIMITED_JSON".freeze,
+          "newline_delimited_json".freeze => "NEWLINE_DELIMITED_JSON".freeze,
+          "sheets".freeze                 => "GOOGLE_SHEETS".freeze,
+          "google_sheets".freeze          => "GOOGLE_SHEETS".freeze,
+          "datastore".freeze              => "DATASTORE_BACKUP".freeze,
+          "backup".freeze                 => "DATASTORE_BACKUP".freeze,
+          "datastore_backup".freeze       => "DATASTORE_BACKUP".freeze,
+          "bigtable".freeze               => "BIGTABLE".freeze
+        }.freeze
+        BIGTABLE_URL_PREFIX = "https://googleapis.com/bigtable/projects/".freeze
+        GOOGLE_SHEETS_URL_PREFIX = \
+          "https://docs.google.com/spreadsheets/".freeze
+
+        ##
         # @private New External from URLs and format
         def self.from_urls urls, format = nil
           external_format = source_format_for urls, format
@@ -79,29 +97,21 @@ module Google
         ##
         # @private Determine source_format from inputs
         def self.source_format_for urls, format
-          val = {
-            "csv" => "CSV",          "avro" => "AVRO",
-            "json"                   => "NEWLINE_DELIMITED_JSON",
-            "newline_delimited_json" => "NEWLINE_DELIMITED_JSON",
-            "sheets"                 => "GOOGLE_SHEETS",
-            "google_sheets"          => "GOOGLE_SHEETS",
-            "datastore"              => "DATASTORE_BACKUP",
-            "backup"                 => "DATASTORE_BACKUP",
-            "datastore_backup"       => "DATASTORE_BACKUP",
-            "bigtable"               => "BIGTABLE"
-          }[format.to_s.downcase]
+          val = SOURCE_FORMATS[format.to_s.downcase]
           return val unless val.nil?
           Array(urls).each do |url|
-            return "CSV" if url.end_with? ".csv"
-            return "NEWLINE_DELIMITED_JSON" if url.end_with? ".json"
-            return "AVRO" if url.end_with? ".avro"
-            return "DATASTORE_BACKUP" if url.end_with? ".backup_info"
-            if url.start_with? "https://docs.google.com/spreadsheets/"
-              return "GOOGLE_SHEETS"
+            return "CSV".freeze if url.end_with? ".csv".freeze
+            if url.end_with? ".json".freeze
+              return "NEWLINE_DELIMITED_JSON".freeze
             end
-            if url.start_with? "https://googleapis.com/bigtable/projects/"
-              return "BIGTABLE"
+            return "AVRO".freeze if url.end_with? ".avro".freeze
+            if url.end_with? ".backup_info".freeze
+              return "DATASTORE_BACKUP".freeze
             end
+            if url.start_with? GOOGLE_SHEETS_URL_PREFIX
+              return "GOOGLE_SHEETS".freeze
+            end
+            return "BIGTABLE".freeze if url.start_with? BIGTABLE_URL_PREFIX
           end
           nil
         end
@@ -110,10 +120,10 @@ module Google
         # @private Determine table class from source_format
         def self.table_class_for format
           case format
-          when "CSV"                    then External::CsvSource
-          when "NEWLINE_DELIMITED_JSON" then External::JsonSource
-          when "GOOGLE_SHEETS"          then External::SheetsSource
-          when "BIGTABLE"               then External::BigtableSource
+          when "CSV".freeze                    then External::CsvSource
+          when "NEWLINE_DELIMITED_JSON".freeze then External::JsonSource
+          when "GOOGLE_SHEETS".freeze          then External::SheetsSource
+          when "BIGTABLE".freeze               then External::BigtableSource
           else
             # AVRO and DATASTORE_BACKUP
             External::DataSource
@@ -201,7 +211,7 @@ module Google
           #   csv_table.csv? #=> true
           #
           def csv?
-            @gapi.source_format == "CSV"
+            @gapi.source_format == "CSV".freeze
           end
 
           ##
@@ -221,7 +231,7 @@ module Google
           #   json_table.json? #=> true
           #
           def json?
-            @gapi.source_format == "NEWLINE_DELIMITED_JSON"
+            @gapi.source_format == "NEWLINE_DELIMITED_JSON".freeze
           end
 
           ##
@@ -241,7 +251,7 @@ module Google
           #   sheets_table.sheets? #=> true
           #
           def sheets?
-            @gapi.source_format == "GOOGLE_SHEETS"
+            @gapi.source_format == "GOOGLE_SHEETS".freeze
           end
 
           ##
@@ -261,7 +271,7 @@ module Google
           #   avro_table.avro? #=> true
           #
           def avro?
-            @gapi.source_format == "AVRO"
+            @gapi.source_format == "AVRO".freeze
           end
 
           ##
@@ -281,7 +291,7 @@ module Google
           #   backup_table.backup? #=> true
           #
           def backup?
-            @gapi.source_format == "DATASTORE_BACKUP"
+            @gapi.source_format == "DATASTORE_BACKUP".freeze
           end
 
           ##
@@ -301,7 +311,7 @@ module Google
           #   bigtable_table.bigtable? #=> true
           #
           def bigtable?
-            @gapi.source_format == "BIGTABLE"
+            @gapi.source_format == "BIGTABLE".freeze
           end
 
           ##
@@ -750,7 +760,7 @@ module Google
           #
           def utf8?
             return true if encoding.nil?
-            encoding == "UTF-8"
+            encoding == "UTF-8".freeze
           end
 
           ##
@@ -772,7 +782,7 @@ module Google
           #   csv_table.iso8859_1? #=> true
           #
           def iso8859_1?
-            encoding == "ISO-8859-1"
+            encoding == "ISO-8859-1".freeze
           end
 
           ##
@@ -1790,7 +1800,7 @@ module Google
             #   end
             #
             def add_bytes qualifier, as: nil
-              col = add_column qualifier, as: as, type: "BYTES"
+              col = add_column qualifier, as: as, type: "BYTES".freeze
               yield col if block_given?
               col
             end
@@ -1825,7 +1835,7 @@ module Google
             #   end
             #
             def add_string qualifier, as: nil
-              col = add_column qualifier, as: as, type: "STRING"
+              col = add_column qualifier, as: as, type: "STRING".freeze
               yield col if block_given?
               col
             end
@@ -1860,7 +1870,7 @@ module Google
             #   end
             #
             def add_integer qualifier, as: nil
-              col = add_column qualifier, as: as, type: "INTEGER"
+              col = add_column qualifier, as: as, type: "INTEGER".freeze
               yield col if block_given?
               col
             end
@@ -1895,7 +1905,7 @@ module Google
             #   end
             #
             def add_float qualifier, as: nil
-              col = add_column qualifier, as: as, type: "FLOAT"
+              col = add_column qualifier, as: as, type: "FLOAT".freeze
               yield col if block_given?
               col
             end
@@ -1930,7 +1940,7 @@ module Google
             #   end
             #
             def add_boolean qualifier, as: nil
-              col = add_column qualifier, as: as, type: "BOOLEAN"
+              col = add_column qualifier, as: as, type: "BOOLEAN".freeze
               yield col if block_given?
               col
             end

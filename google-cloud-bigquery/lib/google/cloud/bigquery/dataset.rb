@@ -2238,9 +2238,9 @@ module Google
           [files].flatten.all? do |file|
             file.respond_to?(:to_gs_url) ||
               (file.respond_to?(:to_str) &&
-                  file.to_str.downcase.start_with?("gs://")) ||
+                  file.to_str.downcase.start_with?("gs://".freeze)) ||
               (file.is_a?(URI) &&
-                  file.to_s.downcase.start_with?("gs://"))
+                  file.to_s.downcase.start_with?("gs://".freeze))
           end
         end
 
@@ -2254,7 +2254,7 @@ module Google
           return [] if array_or_str.nil?
           Array(array_or_str).map do |uri_or_code|
             resource = Google::Apis::BigqueryV2::UserDefinedFunctionResource.new
-            if uri_or_code.start_with? "gs://"
+            if uri_or_code.start_with? "gs://".freeze
               resource.resource_uri = uri_or_code
             else
               resource.inline_code = uri_or_code

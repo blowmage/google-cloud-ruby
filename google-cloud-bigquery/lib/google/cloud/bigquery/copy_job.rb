@@ -79,7 +79,7 @@ module Google
         #
         def create_if_needed?
           disp = @gapi.configuration.copy.create_disposition
-          disp == "CREATE_IF_NEEDED"
+          disp == "CREATE_IF_NEEDED".freeze
         end
 
         ##
@@ -91,7 +91,7 @@ module Google
         #
         def create_never?
           disp = @gapi.configuration.copy.create_disposition
-          disp == "CREATE_NEVER"
+          disp == "CREATE_NEVER".freeze
         end
 
         ##
@@ -103,7 +103,7 @@ module Google
         #
         def write_truncate?
           disp = @gapi.configuration.copy.write_disposition
-          disp == "WRITE_TRUNCATE"
+          disp == "WRITE_TRUNCATE".freeze
         end
 
         ##
@@ -115,7 +115,7 @@ module Google
         #
         def write_append?
           disp = @gapi.configuration.copy.write_disposition
-          disp == "WRITE_APPEND"
+          disp == "WRITE_APPEND".freeze
         end
 
         ##
@@ -128,7 +128,7 @@ module Google
         #
         def write_empty?
           disp = @gapi.configuration.copy.write_disposition
-          disp == "WRITE_EMPTY"
+          disp == "WRITE_EMPTY".freeze
         end
 
         ##

@@ -539,7 +539,7 @@ module Google
         #   end
         #
         def query_job query, params: nil, external: nil,
-                      priority: "INTERACTIVE", cache: true, table: nil,
+                      priority: "INTERACTIVE".freeze, cache: true, table: nil,
                       create: nil, write: nil, dryrun: nil, dataset: nil,
                       project: nil, standard_sql: nil, legacy_sql: nil,
                       large_results: nil, flatten: nil,

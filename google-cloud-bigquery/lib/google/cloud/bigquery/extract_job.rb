@@ -70,7 +70,7 @@ module Google
         #
         def compression?
           val = @gapi.configuration.extract.compression
-          val == "GZIP"
+          val == "GZIP".freeze
         end
 
         ##
@@ -82,7 +82,7 @@ module Google
         #
         def json?
           val = @gapi.configuration.extract.destination_format
-          val == "NEWLINE_DELIMITED_JSON"
+          val == "NEWLINE_DELIMITED_JSON".freeze
         end
 
         ##
@@ -95,7 +95,7 @@ module Google
         def csv?
           val = @gapi.configuration.extract.destination_format
           return true if val.nil?
-          val == "CSV"
+          val == "CSV".freeze
         end
 
         ##
@@ -106,7 +106,7 @@ module Google
         #
         def avro?
           val = @gapi.configuration.extract.destination_format
-          val == "AVRO"
+          val == "AVRO".freeze
         end
 
         ##
@@ -117,7 +117,7 @@ module Google
         #
         def delimiter
           val = @gapi.configuration.extract.field_delimiter
-          val = "," if val.nil?
+          val = ",".freeze if val.nil?
           val
         end
 
