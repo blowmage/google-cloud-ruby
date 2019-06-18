@@ -96,6 +96,10 @@ module Google
       @config
     end
 
+    class << self
+      attr_accessor :logger
+    end
+
     ##
     # Initialize toplevel configuration
     # @private
