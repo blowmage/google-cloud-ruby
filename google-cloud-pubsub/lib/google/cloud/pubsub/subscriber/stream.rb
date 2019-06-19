@@ -250,7 +250,7 @@ module Google
             stop
           rescue GRPC::Cancelled, GRPC::DeadlineExceeded, GRPC::Internal,
                  GRPC::ResourceExhausted, GRPC::Unauthenticated,
-                 GRPC::Unavailable, GRPC::Core::CallError
+                 GRPC::Unavailable, GRPC::Core::CallError => e
             # Restart the stream with an incremental back for a retriable error.
             # Also when GRPC raises the internal CallError.
             log_info do
