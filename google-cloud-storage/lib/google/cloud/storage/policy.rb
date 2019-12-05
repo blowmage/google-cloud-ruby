@@ -15,6 +15,7 @@
 
 require "google/cloud/errors"
 require "google/apis/storage_v1"
+require "google/cloud/storage/policy/bindings"
 
 module Google
   module Cloud
@@ -86,15 +87,15 @@ module Google
       #   bucket.policy do |p|
       #     p.version # 1
       #     p.version = 3
-      #     p.bindings.push({
-      #                       role: "roles/storage.admin",
-      #                       members: ["user:owner@example.com"],
-      #                       condition: {
-      #                         title: "test-condition",
-      #                         description: "description of condition",
-      #                         expression: "expr1"
-      #                       }
-      #                     })
+      #     p.bindings.insert({
+      #                         role: "roles/storage.admin",
+      #                         members: ["user:owner@example.com"],
+      #                         condition: {
+      #                           title: "test-condition",
+      #                           description: "description of condition",
+      #                           expression: "expr1"
+      #                         }
+      #                       })
       #   end
       #
       # @example Using Policy version 3:
@@ -105,15 +106,15 @@ module Google
       #
       #   bucket.policy(requested_policy_version: 3) do |p|
       #     p.version # 3
-      #     p.bindings.push({
-      #                       role: "roles/storage.admin",
-      #                       members: ["user:owner@example.com"],
-      #                       condition: {
-      #                         title: "test-condition",
-      #                         description: "description of condition",
-      #                         expression: "expr1"
-      #                       }
-      #                     })
+      #     p.bindings.insert({
+      #                         role: "roles/storage.admin",
+      #                         members: ["user:owner@example.com"],
+      #                         condition: {
+      #                           title: "test-condition",
+      #                           description: "description of condition",
+      #                           expression: "expr1"
+      #                         }
+      #                       })
       #   end
       #
       class Policy
@@ -126,7 +127,8 @@ module Google
           @etag = etag
           @version = version
           @roles = roles
-          @bindings = bindings
+          @bindings = Bindings.new
+          @bindings.insert(*bindings)
         end
 
         ##
@@ -158,15 +160,15 @@ module Google
         #   bucket.policy do |p|
         #     p.version # 1
         #     p.version = 3
-        #     p.bindings.push({
-        #                       role: "roles/storage.admin",
-        #                       members: ["user:owner@example.com"],
-        #                       condition: {
-        #                         title: "test-condition",
-        #                         description: "description of condition",
-        #                         expression: "expr1"
-        #                       }
-        #                     })
+        #     p.bindings.insert({
+        #                         role: "roles/storage.admin",
+        #                         members: ["user:owner@example.com"],
+        #                         condition: {
+        #                           title: "test-condition",
+        #                           description: "description of condition",
+        #                           expression: "expr1"
+        #                         }
+        #                       })
         #   end
         #
         def version= new_version
@@ -175,7 +177,7 @@ module Google
           end
           if version == 1 && new_version > 1
             @roles.freeze
-            @bindings = roles_to_gapi.map(&:to_h)
+            @bindings.insert(*roles_to_gapi.map(&:to_h))
           end
           @version = new_version
         end
@@ -228,20 +230,24 @@ module Google
         #
         #   bucket.policy(requested_policy_version: 3) do |p|
         #     p.version # 3
-        #     p.bindings.push({
-        #                       role: "roles/storage.admin",
-        #                       members: ["user:owner@example.com"],
-        #                       condition: {
-        #                         title: "test-condition",
-        #                         description: "description of condition",
-        #                         expression: "expr1"
-        #                       }
-        #                     })
+        #     p.bindings.insert({
+        #                         role: "roles/storage.admin",
+        #                         members: ["user:owner@example.com"],
+        #                         condition: {
+        #                           title: "test-condition",
+        #                           description: "description of condition",
+        #                           expression: "expr1"
+        #                         }
+        #                       })
         #   end
         #
         def bindings
           raise "Illegal operation for version 1. Use #roles instead." if version == 1
           @bindings
+        end
+
+        def binding role:, members:, condition: nil
+          Binding.new role: role, members: members, condition: condition
         end
 
         ##
@@ -352,7 +358,7 @@ module Google
         # @private Convert the Policy to a
         # Google::Apis::StorageV1::Policy.
         def to_gapi
-          bindings_gapi = version > 1 ? bindings : roles_to_gapi
+          bindings_gapi = version > 1 ? bindings.to_gapi : roles_to_gapi
           Google::Apis::StorageV1::Policy.new(
             etag: etag,
             version: version,

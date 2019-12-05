@@ -77,15 +77,15 @@ describe Google::Cloud::Storage::Bucket, :policy, :storage do
       member = "serviceAccount:#{service_account}"
       bucket_policy_v3.policy do |p|
         p.version = 3
-        p.bindings.push({
-                          role: role,
-                          members: [member],
-                          condition: {
-                            title: "always-true",
-                            description: "test condition always-true",
-                            expression: "true"
-                          }
-                        })
+        p.bindings.insert({
+                            role: role,
+                            members: [member],
+                            condition: {
+                              title: "always-true",
+                              description: "test condition always-true",
+                              expression: "true"
+                            }
+                          })
 
         expect { p.add role, member }.must_raise RuntimeError
         expect { p.remove role, member }.must_raise RuntimeError
